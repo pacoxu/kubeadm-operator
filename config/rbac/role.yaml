@@ -7,15 +7,35 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - events
   verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
   - get
   - list
   - watch
-  - create
-  - patch
 - apiGroups:
   - ""
   resources:
@@ -25,74 +45,62 @@ rules:
   - list
   - watch
 - apiGroups:
-  - apps
-  resources:
-  - daemonsets
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
   - operator.kubeadm.x-k8s.io
   resources:
   - operations
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - operator.kubeadm.x-k8s.io
   resources:
   - operations/status
   verbs:
   - get
-  - update
   - patch
-- apiGroups:
-  - operator.kubeadm.x-k8s.io
-  resources:
-  - runtimetasks
-  verbs:
-  - get
-  - list
-  - watch
-  - create
   - update
-  - patch
-  - delete
-- apiGroups:
-  - operator.kubeadm.x-k8s.io
-  resources:
-  - runtimetasks/status
-  verbs:
-  - get
-  - update
-  - patch
 - apiGroups:
   - operator.kubeadm.x-k8s.io
   resources:
   - runtimetaskgroups
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - operator.kubeadm.x-k8s.io
   resources:
   - runtimetaskgroups/status
   verbs:
   - get
-  - update
   - patch
+  - update
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - runtimetasks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - runtimetasks/status
+  verbs:
+  - get
+  - patch
+  - update

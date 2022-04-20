@@ -215,7 +215,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 		daemonSet.Spec.Template.Spec.Containers = append(daemonSet.Spec.Template.Spec.Containers,
 			corev1.Container{
 				Name:  "kube-rbac-proxy",
-				Image: "gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0",
+				Image: "gcr.m.daocloud.io/kubebuilder/kube-rbac-proxy:v0.4.0",
 				Args: []string{
 					"--secure-listen-address=0.0.0.0:8443",
 					"--upstream=http://127.0.0.1:8080/",

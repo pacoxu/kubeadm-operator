@@ -7,7 +7,12 @@ See [KEP](https://git.k8s.io/enhancements/keps/sig-cluster-lifecycle/kubeadm/201
 
 ## Quick Start
 
+Configure kubeconfig for your cluster.
+
 ```
-kubectl create -f https://raw.githubusercontent.com/pacoxu/kubeadm-operator/main/config/manager/manager.yaml
+git clone git@github.com:pacoxu/kubeadm-operator.git
+cd kubeadm-operator
+make install
+make deploy
 ```
 

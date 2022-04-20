@@ -1,12 +1,12 @@
-
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
   name: operations.operator.kubeadm.x-k8s.io
 spec:
-  
   group: operator.kubeadm.x-k8s.io
   names:
     categories:
@@ -17,25 +17,21 @@ spec:
     singular: operation
   scope: Cluster
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .status.groups
+      name: Groups
+      type: integer
+    - jsonPath: .status.succeededGroups
+      name: Succeeded
+      type: integer
+    - jsonPath: .status.failedGroups
+      name: Failed
+      type: integer
+    name: v1alpha1
     schema:
-      subresources:
-        status: {}
-      additionalPrinterColumns:
-      - JSONPath: .status.phase
-        name: Phase
-        type: string
-      - JSONPath: .status.groups
-        name: Groups
-        type: integer
-      - JSONPath: .status.succeededGroups
-        name: Succeeded
-        type: integer
-      - JSONPath: .status.failedGroups
-        name: Failed
-        type: integer
       openAPIV3Schema:
         description: Operation is the Schema for the operations API
         properties:
@@ -53,8 +49,9 @@ spec:
             type: object
           spec:
             description: OperationSpec defines the spec of an Operation to be performed
-              by the kubeadm-operator. Please note that once the operation will be completed,
-              the operator will stop to reconcile on any instance of this object.
+              by the kubeadm-operator. Please note that once the operation will be
+              completed, the operator will stop to reconcile on any instance of this
+              object.
             properties:
               custom:
                 description: CustomOperation enable definition of custom list of RuntimeTaskGroup.
@@ -66,10 +63,10 @@ spec:
                         API
                       properties:
                         apiVersion:
-                          description: 'APIVersion defines the versioned schema of this
-                            representation of an object. Servers should convert recognized
-                            schemas to the latest internal value, and may reject unrecognized
-                            values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+                          description: 'APIVersion defines the versioned schema of
+                            this representation of an object. Servers should convert
+                            recognized schemas to the latest internal value, and may
+                            reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
                           type: string
                         kind:
                           description: 'Kind is a string value representing the REST
@@ -81,13 +78,13 @@ spec:
                           type: object
                         spec:
                           description: RuntimeTaskGroupSpec defines the RuntimeTask
-                            template that applies to a group of nodes that should be
-                            changed as part of an Operation. Please note that this is
-                            a runtime object, create with the goal to allow ensure orchestration
-                            of operation RuntimeTasks/Commands, and that this object
-                            will be deleted immediately after the operation completes.
-                            Users can refer to this object only in case of errors/for
-                            problem investigation.
+                            template that applies to a group of nodes that should
+                            be changed as part of an Operation. Please note that this
+                            is a runtime object, create with the goal to allow ensure
+                            orchestration of operation RuntimeTasks/Commands, and
+                            that this object will be deleted immediately after the
+                            operation completes. Users can refer to this object only
+                            in case of errors/for problem investigation.
                           properties:
                             createStrategy:
                               description: CreateStrategy indicates how the controller
@@ -95,38 +92,39 @@ spec:
                                 If missing, sequential mode will be used.
                               type: string
                             nodeFilter:
-                              description: NodeFilter allows to filter the list of nodes
-                                returned by the node selector. It defaults to all.
+                              description: NodeFilter allows to filter the list of
+                                nodes returned by the node selector. It defaults to
+                                all.
                               type: string
                             nodeSelector:
                               description: 'NodeSelector is a label query that identifies
-                                the list of nodes that should be impacted by this RuntimeTaskGroup.
-                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors'
+                                the list of nodes that should be impacted by this
+                                RuntimeTaskGroup. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors'
                               properties:
                                 matchExpressions:
-                                  description: matchExpressions is a list of label selector
-                                    requirements. The requirements are ANDed.
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
                                   items:
-                                    description: A label selector requirement is a selector
-                                      that contains values, a key, and an operator that
-                                      relates the key and values.
+                                    description: A label selector requirement is a
+                                      selector that contains values, a key, and an
+                                      operator that relates the key and values.
                                     properties:
                                       key:
-                                        description: key is the label key that the selector
-                                          applies to.
+                                        description: key is the label key that the
+                                          selector applies to.
                                         type: string
                                       operator:
                                         description: operator represents a key's relationship
-                                          to a set of values. Valid operators are In,
-                                          NotIn, Exists and DoesNotExist.
+                                          to a set of values. Valid operators are
+                                          In, NotIn, Exists and DoesNotExist.
                                         type: string
                                       values:
-                                        description: values is an array of string values.
-                                          If the operator is In or NotIn, the values
-                                          array must be non-empty. If the operator is
-                                          Exists or DoesNotExist, the values array must
-                                          be empty. This array is replaced during a
-                                          strategic merge patch.
+                                        description: values is an array of string
+                                          values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the
+                                          operator is Exists or DoesNotExist, the
+                                          values array must be empty. This array is
+                                          replaced during a strategic merge patch.
                                         items:
                                           type: string
                                         type: array
@@ -138,44 +136,45 @@ spec:
                                 matchLabels:
                                   additionalProperties:
                                     type: string
-                                  description: matchLabels is a map of {key,value} pairs.
-                                    A single {key,value} in the matchLabels map is equivalent
-                                    to an element of matchExpressions, whose key field
-                                    is "key", the operator is "In", and the values array
-                                    contains only "value". The requirements are ANDed.
+                                  description: matchLabels is a map of {key,value}
+                                    pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions,
+                                    whose key field is "key", the operator is "In",
+                                    and the values array contains only "value". The
+                                    requirements are ANDed.
                                   type: object
                               type: object
                             selector:
                               description: 'Selector is a label query over RuntimeTasks
-                                that are generated by this RuntimeTaskGroup. Label keys
-                                and values that must match in order to be controlled
+                                that are generated by this RuntimeTaskGroup. Label
+                                keys and values that must match in order to be controlled
                                 by this RuntimeTaskGroup. It must match the RuntimeTask
                                 template''s labels. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors'
                               properties:
                                 matchExpressions:
-                                  description: matchExpressions is a list of label selector
-                                    requirements. The requirements are ANDed.
+                                  description: matchExpressions is a list of label
+                                    selector requirements. The requirements are ANDed.
                                   items:
-                                    description: A label selector requirement is a selector
-                                      that contains values, a key, and an operator that
-                                      relates the key and values.
+                                    description: A label selector requirement is a
+                                      selector that contains values, a key, and an
+                                      operator that relates the key and values.
                                     properties:
                                       key:
-                                        description: key is the label key that the selector
-                                          applies to.
+                                        description: key is the label key that the
+                                          selector applies to.
                                         type: string
                                       operator:
                                         description: operator represents a key's relationship
-                                          to a set of values. Valid operators are In,
-                                          NotIn, Exists and DoesNotExist.
+                                          to a set of values. Valid operators are
+                                          In, NotIn, Exists and DoesNotExist.
                                         type: string
                                       values:
-                                        description: values is an array of string values.
-                                          If the operator is In or NotIn, the values
-                                          array must be non-empty. If the operator is
-                                          Exists or DoesNotExist, the values array must
-                                          be empty. This array is replaced during a
-                                          strategic merge patch.
+                                        description: values is an array of string
+                                          values. If the operator is In or NotIn,
+                                          the values array must be non-empty. If the
+                                          operator is Exists or DoesNotExist, the
+                                          values array must be empty. This array is
+                                          replaced during a strategic merge patch.
                                         items:
                                           type: string
                                         type: array
@@ -187,11 +186,12 @@ spec:
                                 matchLabels:
                                   additionalProperties:
                                     type: string
-                                  description: matchLabels is a map of {key,value} pairs.
-                                    A single {key,value} in the matchLabels map is equivalent
-                                    to an element of matchExpressions, whose key field
-                                    is "key", the operator is "In", and the values array
-                                    contains only "value". The requirements are ANDed.
+                                  description: matchLabels is a map of {key,value}
+                                    pairs. A single {key,value} in the matchLabels
+                                    map is equivalent to an element of matchExpressions,
+                                    whose key field is "key", the operator is "In",
+                                    and the values array contains only "value". The
+                                    requirements are ANDed.
                                   type: object
                               type: object
                             template:
@@ -200,8 +200,8 @@ spec:
                                 are detected.
                               properties:
                                 metadata:
-                                  description: 'Standard object''s metadata. More info:
-                                    https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+                                  description: 'Standard object''s metadata. More
+                                    info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
                                   type: object
                                 spec:
                                   description: 'Specification of the desired behavior
@@ -212,9 +212,9 @@ spec:
                                         to be performed when executing a RuntimeTask
                                         on a node
                                       items:
-                                        description: CommandDescriptor represents a
-                                          command to be performed. Only one of its members
-                                          may be specified.
+                                        description: CommandDescriptor represents
+                                          a command to be performed. Only one of its
+                                          members may be specified.
                                         properties:
                                           fail:
                                             description: Fail provide a dummy command
@@ -247,16 +247,17 @@ spec:
                                             description: PreflightCommandSpec provides...
                                             type: object
                                           upgradeKubeadm:
-                                            description: UpgradeKubeadmCommandSpec provides...
+                                            description: UpgradeKubeadmCommandSpec
+                                              provides...
                                             type: object
                                           upgradeKubeletAndKubeactl:
                                             description: UpgradeKubeletAndKubeactlCommandSpec
                                               provides...
                                             type: object
                                           wait:
-                                            description: Wait pauses the execution on
-                                              the next command for a given number of
-                                              seconds.
+                                            description: Wait pauses the execution
+                                              on the next command for a given number
+                                              of seconds.
                                             properties:
                                               seconds:
                                                 description: Seconds to pause before
@@ -271,8 +272,8 @@ spec:
                                         this RuntimeTask onto a specific node.
                                       type: string
                                     recoveryMode:
-                                      description: RecoveryMode sets the strategy to
-                                        use when a command is failed.
+                                      description: RecoveryMode sets the strategy
+                                        to use when a command is failed.
                                       type: string
                                   required:
                                   - commands
@@ -280,13 +281,13 @@ spec:
                               type: object
                           type: object
                         status:
-                          description: RuntimeTaskGroupStatus defines the observed state
-                            of RuntimeTaskGroup
+                          description: RuntimeTaskGroupStatus defines the observed
+                            state of RuntimeTaskGroup
                           properties:
                             completionTime:
-                              description: CompletionTime represents time when the RuntimeTaskGroup
-                                was completed. It is represented in RFC3339 form and
-                                is in UTC.
+                              description: CompletionTime represents time when the
+                                RuntimeTaskGroup was completed. It is represented
+                                in RFC3339 form and is in UTC.
                               format: date-time
                               type: string
                             errorMessage:
@@ -352,15 +353,16 @@ spec:
                 description: Paused indicates that the operation is paused.
                 type: boolean
               renewCertificates:
-                description: RenewCertificates provide declarative support for the kubeadm
-                  upgrade workflow.
+                description: RenewCertificates provide declarative support for the
+                  kubeadm upgrade workflow.
                 type: object
               upgrade:
                 description: Upgrade provide declarative support for the kubeadm upgrade
                   workflow.
                 properties:
                   kubernetesVersion:
-                    description: KubernetesVersion specifies the target kubernetes version
+                    description: KubernetesVersion specifies the target kubernetes
+                      version
                     type: string
                 required:
                 - kubernetesVersion
@@ -370,19 +372,19 @@ spec:
             description: OperationStatus defines the observed state of Operation
             properties:
               completionTime:
-                description: CompletionTime represents time when the Operation was completed.
-                  It is represented in RFC3339 form and is in UTC.
+                description: CompletionTime represents time when the Operation was
+                  completed. It is represented in RFC3339 form and is in UTC.
                 format: date-time
                 type: string
               errorMessage:
-                description: ErrorMessage will be set in the event that there is a problem
-                  in executing one of the Operation's RuntimeTasks and will contain
-                  a more verbose string suitable for logging and human consumption.
+                description: ErrorMessage will be set in the event that there is a
+                  problem in executing one of the Operation's RuntimeTasks and will
+                  contain a more verbose string suitable for logging and human consumption.
                 type: string
               errorReason:
-                description: ErrorReason will be set in the event that there is a problem
-                  in executing one of the Operation's RuntimeTasks and will contain
-                  a succinct value suitable for machine interpretation.
+                description: ErrorReason will be set in the event that there is a
+                  problem in executing one of the Operation's RuntimeTasks and will
+                  contain a succinct value suitable for machine interpretation.
                 type: string
               failedGroups:
                 description: FailedGroups return the number of RuntimeTaskGroups with
@@ -395,8 +397,8 @@ spec:
                 format: int32
                 type: integer
               invalidGroups:
-                description: InvalidGroups return the number of RuntimeTaskGroups with
-                  at least one RuntimeTask inconsistencies like e.g. orphans
+                description: InvalidGroups return the number of RuntimeTaskGroups
+                  with at least one RuntimeTask inconsistencies like e.g. orphans
                 format: int32
                 type: integer
               paused:
@@ -413,8 +415,8 @@ spec:
                 type: integer
               startTime:
                 description: StartTime represents time when the Operation execution
-                  was started by the controller. It is represented in RFC3339 form and
-                  is in UTC.
+                  was started by the controller. It is represented in RFC3339 form
+                  and is in UTC.
                 format: date-time
                 type: string
               succeededGroups:
@@ -424,7 +426,10 @@ spec:
                 type: integer
             type: object
         type: object
-
+    served: true
+    storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

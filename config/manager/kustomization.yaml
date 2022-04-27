@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: daocloud.io/daocloud/kubeadm-operator
-  newTag: v0.0.2-dev
+  newTag: v0.0.2

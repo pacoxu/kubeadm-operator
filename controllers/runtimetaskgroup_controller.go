@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -258,6 +259,10 @@ func (r *RuntimeTaskGroupReconciler) reconcileNormal(executionMode operatorv1.Op
 
 			err := r.createTasksReplica(executionMode, taskgroup, nextNode)
 			if err != nil {
+				if strings.Contains(err.Error(), "already exists") {
+					log.WithValues("node-name", nextNode).Info("task already exists")
+					return nil
+				}
 				return errors.Wrap(err, "Failed to create Task replica")
 			}
 		}
@@ -276,15 +281,23 @@ func (r *RuntimeTaskGroupReconciler) createTasksReplica(executionMode operatorv1
 		paused = true
 	}
 
+	// todo: use a template instead of a new object; currently the template labels are not set successfully
+	r.Log.Info("template logs", "taskgroup", taskgroup, "labels", taskgroup.Spec.Template.GetObjectMeta().GetLabels())
+	labels := taskgroup.Spec.Template.Labels
+	if len(labels) == 0 {
+		labels = taskgroup.Labels
+	}
+
 	task := &operatorv1.RuntimeTask{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "RuntimeTask",
 			APIVersion: gv.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            fmt.Sprintf("%s-%s", taskgroup.Name, nodeName), //TODO: GeneratedName?
-			Namespace:       taskgroup.Namespace,
-			Labels:          taskgroup.Spec.Template.Labels,
+			Name:      fmt.Sprintf("%s-%s", taskgroup.Name, nodeName), //TODO: GeneratedName?
+			Namespace: taskgroup.Namespace,
+			// we should use the same labels as the taskgroup template
+			Labels:          labels,
 			Annotations:     taskgroup.Spec.Template.Annotations,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(taskgroup, taskgroup.GroupVersionKind())},
 		},

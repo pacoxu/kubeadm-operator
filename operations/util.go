@@ -117,7 +117,7 @@ func fixupCustomTaskGroup(operation *operatorv1.Operation, taskgroup operatorv1.
 	taskgroup.SetLabels(labels)
 	taskgroup.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(operation, operation.GroupVersionKind())})
 	taskgroup.Spec.Selector.MatchLabels = labels
-	taskgroup.Spec.Template.SetLabels(labels)
+	taskgroup.Spec.Template.GetObjectMeta().SetLabels(labels)
 	taskgroup.Spec.Template.SetCreationTimestamp(metav1.Now())
 	taskgroup.Status = operatorv1.RuntimeTaskGroupStatus{
 		Phase: string(operatorv1.OperationPhasePending),

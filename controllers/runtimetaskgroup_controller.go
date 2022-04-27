@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -258,6 +259,10 @@ func (r *RuntimeTaskGroupReconciler) reconcileNormal(executionMode operatorv1.Op
 
 			err := r.createTasksReplica(executionMode, taskgroup, nextNode)
 			if err != nil {
+				if strings.Contains(err.Error(), "already exists") {
+					log.WithValues("node-name", nextNode).Info("task already exists")
+					return nil
+				}
 				return errors.Wrap(err, "Failed to create Task replica")
 			}
 		}
@@ -284,7 +289,7 @@ func (r *RuntimeTaskGroupReconciler) createTasksReplica(executionMode operatorv1
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            fmt.Sprintf("%s-%s", taskgroup.Name, nodeName), //TODO: GeneratedName?
 			Namespace:       taskgroup.Namespace,
-			Labels:          taskgroup.Spec.Template.Labels,
+			Labels:          taskgroup.Spec.Template.GetObjectMeta().GetLabels(),
 			Annotations:     taskgroup.Spec.Template.Annotations,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(taskgroup, taskgroup.GroupVersionKind())},
 		},

@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= daocloud.io/daocloud/kubeadm-operator:latest
+IMG ?= daocloud.io/daocloud/kubeadm-operator:v0.0.2-dev
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd"
 

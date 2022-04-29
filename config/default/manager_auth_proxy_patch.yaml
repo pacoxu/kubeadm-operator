@@ -23,3 +23,5 @@ spec:
         args:
         - "--metrics-addr=127.0.0.1:8080"
         - "--enable-leader-election"
+        - "--manager-pod=$(MY_POD_NAME)"
+        - "--manager-namespace=$(MY_POD_NAMESPACE)"

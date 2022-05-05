@@ -1,0 +1,105 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - operations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - operations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - runtimetaskgroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - runtimetaskgroups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - runtimetasks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.kubeadm.x-k8s.io
+  resources:
+  - runtimetasks/status
+  verbs:
+  - get
+  - patch
+  - update

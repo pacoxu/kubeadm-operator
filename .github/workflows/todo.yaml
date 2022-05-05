@@ -1,5 +1,8 @@
 name: "Workflow"
-on: ["push"]
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
 jobs:
   build:
     runs-on: "ubuntu-latest"

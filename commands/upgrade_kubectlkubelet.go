@@ -22,6 +22,7 @@ import (
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
+// TODO this is a temporary hack to get the kubectl & kubelet upgrade to work
 func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlCommandSpec, log logr.Logger) error {
 	return nil
 }

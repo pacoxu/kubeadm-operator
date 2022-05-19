@@ -25,7 +25,6 @@ import (
 )
 
 func createUpgradeApplyTaskGroup(operation *operatorv1.Operation, taskdeploymentOrder string, taskdeploymentName string) operatorv1.RuntimeTaskGroup {
-	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
 	gv := operatorv1.GroupVersion
 
 	labels := map[string]string{}

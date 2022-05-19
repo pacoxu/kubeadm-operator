@@ -22,9 +22,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.m.daocloud.io/distroless/static:nonroot
+# distroless cannot run `kubeadm upgrade apply` smoothly
+# FROM gcr.m.daocloud.io/distroless/static:nonroot
+FROM docker.m.daocloud.io/centos
 WORKDIR /
 COPY --from=builder /workspace/manager .
-USER nonroot:nonroot
+# USER nonroot:nonroot
 
 ENTRYPOINT ["/manager"]

@@ -227,10 +227,21 @@ spec:
                                           kubeadmUpgradeApply:
                                             description: KubeadmUpgradeApplyCommandSpec
                                               provides...
+                                            properties:
+                                              dryRun:
+                                                description: for dry run mode
+                                                type: boolean
+                                              kubernetesVersion:
+                                                description: KubernetesVersion specifies
+                                                  the target kubernetes version If
+                                                  the version is empty, we will skip
+                                                  this command.
+                                                type: string
                                             type: object
                                           kubeadmUpgradeNode:
-                                            description: KubeadmUpgradeNodeCommandSpec
-                                              provides...
+                                            description: TODO download the specified
+                                              version bin and replace it in the node
+                                              KubeadmUpgradeNodeCommandSpec provides...
                                             type: object
                                           kubectlDrain:
                                             description: KubectlDrainCommandSpec provides...
@@ -249,10 +260,26 @@ spec:
                                           upgradeKubeadm:
                                             description: UpgradeKubeadmCommandSpec
                                               provides...
+                                            properties:
+                                              kubernetesVersion:
+                                                description: KubernetesVersion specifies
+                                                  the target kubernetes version If
+                                                  the version is empty, we will skip
+                                                  this command.
+                                                type: string
                                             type: object
                                           upgradeKubeletAndKubeactl:
-                                            description: UpgradeKubeletAndKubeactlCommandSpec
+                                            description: TODO download the specified
+                                              version bin and replace it in the node
+                                              UpgradeKubeletAndKubeactlCommandSpec
                                               provides...
+                                            properties:
+                                              kubernetesVersion:
+                                                description: KubernetesVersion specifies
+                                                  the target kubernetes version If
+                                                  the version is empty, we will skip
+                                                  this command.
+                                                type: string
                                             type: object
                                           wait:
                                             description: Wait pauses the execution

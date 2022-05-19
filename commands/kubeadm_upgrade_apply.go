@@ -17,12 +17,31 @@ limitations under the License.
 package commands
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// TODO this is a temporary hack to get the "kubeadm upgrade apply" to work
+// runKubeadmUpgradeApply runs the kubeadm upgrade apply command
 func runKubeadmUpgradeApply(spec *operatorv1.KubeadmUpgradeApplyCommandSpec, log logr.Logger) error {
+	var cmd *cmd
+	// TODO: add real dry run support
+	cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--v=4")
+	if spec.DryRun {
+		cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--dry-run", "--v=4")
+	}
+
+	lines, err := cmd.RunAndCapture()
+	if err != nil {
+		log.Error(err, "kubeadm upgrade apply failed", strings.Join(lines, "\n"))
+		return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
+	}
+
+	log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
+
 	return nil
 }

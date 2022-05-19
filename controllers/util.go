@@ -119,7 +119,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 				Spec: corev1.PodSpec{
 					Tolerations: []corev1.Toleration{
 						{
-							Key:    "node-role.kubernetes.io/master",
+							Key:    "node-role.kubernetes.io/control-plane",
 							Effect: corev1.TaintEffectNoSchedule,
 						},
 					},

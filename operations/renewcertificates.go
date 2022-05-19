@@ -22,7 +22,7 @@ import (
 
 func setupRenewCertificates() map[string]string {
 	return map[string]string{
-		"node-role.kubernetes.io/master": "",
+		"node-role.kubernetes.io/control-plane": "",
 	}
 }
 

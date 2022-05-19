@@ -237,10 +237,10 @@ func (r *RuntimeTaskReconciler) reconcileNormal(executionMode operatorv1.Operati
 	}
 
 	// Proceed with the current command execution
-
 	if executionMode == operatorv1.OperationExecutionModeDryRun {
 		// if dry running wait for an arbitrary delay so the user will get a better perception of the Task execution order
 		time.Sleep(3 * time.Second)
+		// TODO should we collect log for dry-run?
 	} else {
 		// else we should execute the CurrentCommand
 		log.WithValues("command", task.Status.CurrentCommand).Info("running command")

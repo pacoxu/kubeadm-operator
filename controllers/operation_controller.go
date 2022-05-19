@@ -131,6 +131,7 @@ func (r *OperationReconciler) reconcileDaemonSet(operation *operatorv1.Operation
 		return nil
 	}
 
+	// daemonset will be created only if the operation is in controlled mode.
 	if !daemonSetShouldBeRunning(operation) {
 		return nil
 	}

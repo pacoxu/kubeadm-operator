@@ -26,52 +26,74 @@ func setupUpgrade() map[string]string {
 
 func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec) *operatorv1.RuntimeTaskGroupList {
 	var items []operatorv1.RuntimeTaskGroup
+	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
 
-	t1 := createBasicTaskGroup(operation, "01", "upgrade-cp-1")
+	t1 := createUpgradeApplyTaskGroup(operation, "01", "upgrade-apply")
 	setCP1Selector(&t1)
+	// run `upgrade apply`` on the first node of all control plane
 	t1.Spec.NodeFilter = string(operatorv1.RuntimeTaskGroupNodeFilterHead)
 	t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
 		operatorv1.CommandDescriptor{
-			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{},
+			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 		operatorv1.CommandDescriptor{
-			KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{},
+			KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
+				DryRun:            dryRun,
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 		operatorv1.CommandDescriptor{
-			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{},
+			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 	)
 	items = append(items, t1)
 
-	t2 := createBasicTaskGroup(operation, "02", "upgrade-cp-n")
-	setCPNSelector(&t2)
+	// this can be skipped if there is only one control-plane node.
+	// currently it depends on the selector
+	t2 := createBasicTaskGroup(operation, "02", "upgrade-cp")
+	setWSelector(&t2)
 	t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,
 		operatorv1.CommandDescriptor{
-			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{},
+			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 		operatorv1.CommandDescriptor{
 			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{},
 		},
 		operatorv1.CommandDescriptor{
-			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{},
+			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 	)
 	items = append(items, t2)
 
+	// this can be skipped if there are no worker nodes.
+	// currently it depends on the selector
 	t3 := createBasicTaskGroup(operation, "02", "upgrade-w")
 	setWSelector(&t3)
+
 	t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
 		operatorv1.CommandDescriptor{
 			KubectlDrain: &operatorv1.KubectlDrainCommandSpec{},
 		},
 		operatorv1.CommandDescriptor{
-			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{},
+			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 		operatorv1.CommandDescriptor{
 			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{},
 		},
 		operatorv1.CommandDescriptor{
-			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{},
+			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
+				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+			},
 		},
 		operatorv1.CommandDescriptor{
 			KubectlUncordon: &operatorv1.KubectlUncordonCommandSpec{},

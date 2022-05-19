@@ -19,7 +19,6 @@ package v1alpha1
 // CommandDescriptor represents a command to be performed.
 // Only one of its members may be specified.
 type CommandDescriptor struct {
-
 	// +optional
 	KubeadmRenewCertificates *KubeadmRenewCertsCommandSpec `json:"kubeadmRenewCertificates,omitempty"`
 
@@ -66,6 +65,10 @@ type PreflightCommandSpec struct {
 
 // UpgradeKubeadmCommandSpec provides...
 type UpgradeKubeadmCommandSpec struct {
+	// +optional
+	// KubernetesVersion specifies the target kubernetes version
+	// If the version is empty, we will skip this command.
+	KubernetesVersion string `json:"kubernetesVersion"`
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
@@ -73,14 +76,17 @@ type UpgradeKubeadmCommandSpec struct {
 
 // KubeadmUpgradeApplyCommandSpec provides...
 type KubeadmUpgradeApplyCommandSpec struct {
-
-	// INSERT ADDITIONAL SPEC FIELDS -
-	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	// KubernetesVersion specifies the target kubernetes version
+	// If the version is empty, we will skip this command.
+	KubernetesVersion string `json:"kubernetesVersion"`
+	// for dry run mode
+	DryRun bool `json:"dryRun,omitempty"`
 }
 
+// TODO download the specified version bin and replace it in the node
 // KubeadmUpgradeNodeCommandSpec provides...
 type KubeadmUpgradeNodeCommandSpec struct {
-
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -99,8 +105,13 @@ type KubectlUncordonCommandSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
+// TODO download the specified version bin and replace it in the node
 // UpgradeKubeletAndKubeactlCommandSpec provides...
 type UpgradeKubeletAndKubeactlCommandSpec struct {
+	// +optional
+	// KubernetesVersion specifies the target kubernetes version
+	// If the version is empty, we will skip this command.
+	KubernetesVersion string `json:"kubernetesVersion"`
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file

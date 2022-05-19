@@ -22,6 +22,7 @@ import (
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
+// TODO this is a temporary hack to get the "kubeadm upgrade apply" to work
 func runKubeadmUpgradeApply(spec *operatorv1.KubeadmUpgradeApplyCommandSpec, log logr.Logger) error {
 	return nil
 }

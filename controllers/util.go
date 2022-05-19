@@ -157,6 +157,8 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: pointer.BoolPtr(true),
+								// TODO use non-root user: currently the /etc/kubernetes need root permissions
+								// RunAsUser: pointer.Int64Ptr(0),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -166,6 +168,33 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								{
 									Name:      "etc-kubernetes",
 									MountPath: "/etc/kubernetes",
+								},
+								// TODO: use a different volume for the certificates when kubeadm upgrade apply.
+								// "kubeadm upgrade node" may use different dirs
+								// var-lib-kubelet-pki is used by kubeadm upgrade apply to store the certificates
+								{
+									Name:      "var-lib-kubelet-pki",
+									MountPath: "/var/lib/kubelet/pki",
+								},
+								// crictl is used by kubeadm upgrade apply to check the binary like `crictl`
+								{
+									Name:      "crictl",
+									MountPath: "/usr/local/bin/crictl",
+								},
+								// cp is used by kubeadm upgrade apply to run command like `cp`
+								{
+									Name:      "cp",
+									MountPath: "/usr/bin/cp",
+								},
+								// run is used to check container runtime status
+								{
+									Name:      "run",
+									MountPath: "/run",
+								},
+								// /var/lib/etcd is for etcd back during kubeadm upgrade apply
+								{
+									Name:      "etcd-data-dir",
+									MountPath: "/var/lib/etcd",
 								},
 							},
 						},
@@ -187,6 +216,51 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/etc/kubernetes",
+									Type: hostPathTypePtr(corev1.HostPathDirectory),
+								},
+							},
+						},
+						{
+							Name: "var-lib-kubelet-pki",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/kubelet/pki",
+									Type: hostPathTypePtr(corev1.HostPathDirectory),
+								},
+							},
+						},
+						{
+							Name: "crictl",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/usr/local/bin/crictl",
+									Type: hostPathTypePtr(corev1.HostPathFile),
+								},
+							},
+						},
+						{
+							Name: "cp",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/usr/bin/cp",
+									Type: hostPathTypePtr(corev1.HostPathFile),
+								},
+							},
+						},
+						{
+							Name: "run",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/run",
+									Type: hostPathTypePtr(corev1.HostPathDirectory),
+								},
+							},
+						},
+						{
+							Name: "etcd-data-dir",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/lib/etcd",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},

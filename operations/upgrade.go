@@ -36,6 +36,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		operatorv1.CommandDescriptor{
 			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
 				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				Local:             operation.Spec.Upgrade.Local,
 			},
 		},
 		operatorv1.CommandDescriptor{
@@ -47,6 +48,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		operatorv1.CommandDescriptor{
 			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				Local:             operation.Spec.Upgrade.Local,
 			},
 		},
 	)
@@ -60,14 +62,18 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		operatorv1.CommandDescriptor{
 			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
 				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				Local:             operation.Spec.Upgrade.Local,
 			},
 		},
 		operatorv1.CommandDescriptor{
-			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{},
+			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
+				DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
+			},
 		},
 		operatorv1.CommandDescriptor{
 			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				Local:             operation.Spec.Upgrade.Local,
 			},
 		},
 	)
@@ -85,14 +91,18 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		operatorv1.CommandDescriptor{
 			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
 				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				Local:             operation.Spec.Upgrade.Local,
 			},
 		},
 		operatorv1.CommandDescriptor{
-			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{},
+			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
+				DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
+			},
 		},
 		operatorv1.CommandDescriptor{
 			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 				KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				Local:             operation.Spec.Upgrade.Local,
 			},
 		},
 		operatorv1.CommandDescriptor{

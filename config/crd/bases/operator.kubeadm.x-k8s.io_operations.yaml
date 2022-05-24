@@ -223,6 +223,17 @@ spec:
                                           kubeadmRenewCertificates:
                                             description: KubeadmRenewCertsCommandSpec
                                               provides...
+                                            properties:
+                                              commands:
+                                                description: 'Commands is a list of
+                                                  commands to run: all, apiserver,
+                                                  apiserver-etcd-client, apiserver-kubelet-client,
+                                                  controller-manager.conf, etcd-healthcheck-client,
+                                                  etcd-peer, etcd-server, front-proxy-client,
+                                                  scheduler.conf'
+                                                items:
+                                                  type: string
+                                                type: array
                                             type: object
                                           kubeadmUpgradeApply:
                                             description: KubeadmUpgradeApplyCommandSpec
@@ -242,13 +253,31 @@ spec:
                                             description: TODO download the specified
                                               version bin and replace it in the node
                                               KubeadmUpgradeNodeCommandSpec provides...
+                                            properties:
+                                              dryRun:
+                                                description: for dry run mode
+                                                type: boolean
                                             type: object
                                           kubectlDrain:
                                             description: KubectlDrainCommandSpec provides...
+                                            properties:
+                                              nodes:
+                                                description: Nodes is a list of nodes
+                                                  to uncordon
+                                                items:
+                                                  type: string
+                                                type: array
                                             type: object
                                           kubectlUncordon:
                                             description: KubectlUncordonCommandSpec
                                               provides...
+                                            properties:
+                                              nodes:
+                                                description: Nodes is a list of nodes
+                                                  to uncordon
+                                                items:
+                                                  type: string
+                                                type: array
                                             type: object
                                           pass:
                                             description: Pass provide a dummy command
@@ -267,6 +296,13 @@ spec:
                                                   the version is empty, we will skip
                                                   this command.
                                                 type: string
+                                              local:
+                                                description: Local is by default true.
+                                                  If true, operator will use the binary
+                                                  in /usr/bin If not, operator will
+                                                  download the binary from official
+                                                  websites
+                                                type: boolean
                                             type: object
                                           upgradeKubeletAndKubeactl:
                                             description: TODO download the specified
@@ -280,6 +316,13 @@ spec:
                                                   the version is empty, we will skip
                                                   this command.
                                                 type: string
+                                              local:
+                                                description: Local is by default true.
+                                                  If true, operator will use the binary
+                                                  in /usr/bin If not, operator will
+                                                  download the binary from official
+                                                  websites
+                                                type: boolean
                                             type: object
                                           wait:
                                             description: Wait pauses the execution
@@ -391,6 +434,8 @@ spec:
                     description: KubernetesVersion specifies the target kubernetes
                       version
                     type: string
+                  local:
+                    type: boolean
                 required:
                 - kubernetesVersion
                 type: object

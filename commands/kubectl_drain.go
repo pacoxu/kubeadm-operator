@@ -17,12 +17,26 @@ limitations under the License.
 package commands
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// TODO this is a temporary hack to get the "kubectl drain" to work
+// Uncordon drain specified nodes
 func runKubectlDrain(spec *operatorv1.KubectlDrainCommandSpec, log logr.Logger) error {
+	for _, node := range spec.Nodes {
+		cmd := newCmd("kubectl", "drain", node)
+
+		lines, err := cmd.RunAndCapture()
+		if err != nil {
+			return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
+		}
+
+		log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
+	}
 	return nil
 }

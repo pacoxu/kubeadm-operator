@@ -70,6 +70,12 @@ type UpgradeKubeadmCommandSpec struct {
 	// If the version is empty, we will skip this command.
 	KubernetesVersion string `json:"kubernetesVersion"`
 
+	// +optional
+	// Local is by default true.
+	// If true, operator will use the binary in /usr/bin
+	// If not, operator will download the binary from official websites
+	Local bool `json:"local,omitempty"`
+
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -87,12 +93,18 @@ type KubeadmUpgradeApplyCommandSpec struct {
 // TODO download the specified version bin and replace it in the node
 // KubeadmUpgradeNodeCommandSpec provides...
 type KubeadmUpgradeNodeCommandSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS -
-	// Important: Run "make" to regenerate code after modifying this file
+	// for dry run mode
+	DryRun bool `json:"dryRun,omitempty"`
 }
 
 // KubectlDrainCommandSpec provides...
 type KubectlDrainCommandSpec struct {
+	// +optional
+	// Nodes is a list of nodes to uncordon
+	Nodes []string `json:"nodes"`
+
+	// TODO support dry-run
+	// TODO support ignore daemonsets
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
@@ -100,6 +112,9 @@ type KubectlDrainCommandSpec struct {
 
 // KubectlUncordonCommandSpec provides...
 type KubectlUncordonCommandSpec struct {
+	// +optional
+	// Nodes is a list of nodes to uncordon
+	Nodes []string `json:"nodes"`
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
@@ -113,12 +128,22 @@ type UpgradeKubeletAndKubeactlCommandSpec struct {
 	// If the version is empty, we will skip this command.
 	KubernetesVersion string `json:"kubernetesVersion"`
 
+	// +optional
+	// Local is by default true.
+	// If true, operator will use the binary in /usr/bin
+	// If not, operator will download the binary from official websites
+	Local bool `json:"local,omitempty"`
+
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // KubeadmRenewCertsCommandSpec provides...
 type KubeadmRenewCertsCommandSpec struct {
+	// +optional
+	// Commands is a list of commands to run: all, apiserver, apiserver-etcd-client, apiserver-kubelet-client,
+	// controller-manager.conf, etcd-healthcheck-client, etcd-peer, etcd-server, front-proxy-client, scheduler.conf
+	Commands []string `json:"commands"`
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file

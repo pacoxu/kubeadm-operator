@@ -37,6 +37,7 @@ type UpgradeOperationSpec struct {
 	// KubernetesVersion specifies the target kubernetes version
 	KubernetesVersion string `json:"kubernetesVersion"`
 
+	Local bool `json:"local,omitempty"`
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file
 }

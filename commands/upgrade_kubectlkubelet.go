@@ -17,12 +17,46 @@ limitations under the License.
 package commands
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// TODO this is a temporary hack to get the kubectl & kubelet upgrade to work
+// runUpgradeKubectlAndKubelet skip download when using local.
+// If not local, download kubectl and kubelet. Kubelet replacement needs to be done after kubelet stopped.
 func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlCommandSpec, log logr.Logger) error {
+	if spec.Local {
+		return nil
+	}
+	err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubectl", log)
+	if err != nil {
+		return err
+	}
+
+	var cmd *cmd
+
+	cmd = newCmd("systemctl", "stop", "kubelet")
+	stop, err := cmd.RunAndCapture()
+	if err != nil {
+		return errors.WithStack(errors.WithMessage(err, strings.Join(stop, "\n")))
+	}
+	log.Info(fmt.Sprintf("%s", strings.Join(stop, "\n")))
+
+	err = DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubelet", log)
+	if err != nil {
+		return err
+	}
+
+	cmd = newCmd("systemctl", "start", "kubelet")
+	start, err := cmd.RunAndCapture()
+	if err != nil {
+		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
+	}
+	log.Info(fmt.Sprintf("%s", strings.Join(start, "\n")))
+
 	return nil
 }

@@ -17,12 +17,43 @@ limitations under the License.
 package commands
 
 import (
+	"fmt"
+	"runtime"
+	"strings"
+
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// TODO this is a temporary hack to get the upgrading kubeadm to work
+// sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
+const DownloadURLTemplate = "https://storage.googleapis.com/kubernetes-release/release/%s/bin/linux/%s/%s"
+
+// runUpgradeKubeadm will try to download the binary from official websites;
 func runUpgradeKubeadm(spec *operatorv1.UpgradeKubeadmCommandSpec, log logr.Logger) error {
+	if spec.Local {
+		return nil
+	}
+
+	return DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubeadm", log)
+}
+
+func DownloadFromOfficialWebsite(version, bin string, log logr.Logger) error {
+	var cmd *cmd
+
+	cmd = newCmd("curl", "-L", "--remote-name-all", fmt.Sprintf(DownloadURLTemplate, version, runtime.GOARCH, bin), "-o", "/usr/bin/"+bin)
+	donwlod, err := cmd.RunAndCapture()
+	if err != nil {
+		return errors.WithStack(errors.WithMessage(err, strings.Join(donwlod, "\n")))
+	}
+	log.Info(fmt.Sprintf("%s", strings.Join(donwlod, "\n")))
+
+	cmd = newCmd("chmod", "+x", "/usr/bin/"+bin)
+	lines, err := cmd.RunAndCapture()
+	if err != nil {
+		return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
+	}
+	log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
 	return nil
 }

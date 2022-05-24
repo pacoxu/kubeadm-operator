@@ -31,10 +31,9 @@ func runPreflight(spec *operatorv1.PreflightCommandSpec, log logr.Logger) error 
 
 	lines, err := cmd.RunAndCapture()
 	if err != nil {
-		return errors.WithStack(err)
+		return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
 	}
 
 	log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
-
 	return nil
 }

@@ -29,7 +29,7 @@ func setupRenewCertificates() map[string]string {
 func planRenewCertificates(operation *operatorv1.Operation, spec *operatorv1.RenewCertificatesOperationSpec) *operatorv1.RuntimeTaskGroupList {
 	var items []operatorv1.RuntimeTaskGroup
 
-	t1 := createBasicTaskGroup(operation, "01", "renew-cp")
+	t1 := createBasicTaskGroup(operation, "01", "renew")
 	setCPSelector(&t1)
 	t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
 		operatorv1.CommandDescriptor{

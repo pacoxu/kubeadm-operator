@@ -166,15 +166,23 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									MountPath: "/usr/bin/kubeadm",
 								},
 								{
+									Name:      "kubelet-binary",
+									MountPath: "/usr/bin/kubelet",
+								},
+								{
+									Name:      "kubectl-binary",
+									MountPath: "/usr/bin/kubectl",
+								},
+								{
 									Name:      "etc-kubernetes",
 									MountPath: "/etc/kubernetes",
 								},
 								// TODO: use a different volume for the certificates when kubeadm upgrade apply.
 								// "kubeadm upgrade node" may use different dirs
-								// var-lib-kubelet-pki is used by kubeadm upgrade apply to store the certificates
+								// var-lib-kubelet is used by kubeadm upgrade apply to store the certificates and /var/lib/kubelet/kubeadm-flags.env
 								{
-									Name:      "var-lib-kubelet-pki",
-									MountPath: "/var/lib/kubelet/pki",
+									Name:      "var-lib-kubelet",
+									MountPath: "/var/lib/kubelet/",
 								},
 								// crictl is used by kubeadm upgrade apply to check the binary like `crictl`
 								{
@@ -196,12 +204,39 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									Name:      "etcd-data-dir",
 									MountPath: "/var/lib/etcd",
 								},
+								// below are used to run `systemctl restart kubelet`
+								{
+									Name:      "run-systemd",
+									MountPath: "/run/systemd/system",
+								},
+								{
+									Name:      "system-bus",
+									MountPath: "/var/run/dbus/system_bus_socket",
+								},
 							},
 						},
 					},
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(10),
 					HostNetwork:                   true,
 					Volumes: []corev1.Volume{
+						{
+							Name: "kubectl-binary",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/usr/bin/kubectl",
+									Type: hostPathTypePtr(corev1.HostPathFile),
+								},
+							},
+						},
+						{
+							Name: "kubelet-binary",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/usr/bin/kubelet",
+									Type: hostPathTypePtr(corev1.HostPathFile),
+								},
+							},
+						},
 						{
 							Name: "kubeadm-binary",
 							VolumeSource: corev1.VolumeSource{
@@ -221,10 +256,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							},
 						},
 						{
-							Name: "var-lib-kubelet-pki",
+							Name: "var-lib-kubelet",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet/pki",
+									Path: "/var/lib/kubelet",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},
@@ -262,6 +297,24 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/var/lib/etcd",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
+								},
+							},
+						},
+						{
+							Name: "run-systemd",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/run/systemd/system",
+									Type: hostPathTypePtr(corev1.HostPathDirectory),
+								},
+							},
+						},
+						{
+							Name: "system-bus",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/var/run/dbus/system_bus_socket",
+									Type: hostPathTypePtr(corev1.HostPathFile),
 								},
 							},
 						},

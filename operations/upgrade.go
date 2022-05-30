@@ -25,6 +25,9 @@ func setupUpgrade() map[string]string {
 }
 
 func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec) *operatorv1.RuntimeTaskGroupList {
+	// TODO support upgrade to v1.n-1~v1.n of current kubernetes server version.
+	// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
+
 	var items []operatorv1.RuntimeTaskGroup
 	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
 

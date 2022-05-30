@@ -18,6 +18,7 @@ package commands
 
 import (
 	"fmt"
+	"net/http"
 	"runtime"
 	"strings"
 
@@ -29,6 +30,28 @@ import (
 
 // sudo curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/${ARCH}/{kubeadm,kubelet,kubectl}
 const DownloadURLTemplate = "https://storage.googleapis.com/kubernetes-release/release/%s/bin/linux/%s/%s"
+
+// download url tempalte for servers in China that cannot access googleapis.com
+const BackupDownloadURLTemplate = "http://dao-get.daocloud.io/kubernetes-release/release/$s/bin/linux/$s/%s"
+
+func GetDownloadURLTemplate() string {
+	if canAccessGoogleapis() {
+		return DownloadURLTemplate
+	}
+	return BackupDownloadURLTemplate
+}
+
+func canAccessGoogleapis() bool {
+	// check a url that can be accessed by google
+	_, err := http.Get("https://storage.googleapis.com/kubernetes-release/release/v1.24.0/bin/linux/amd64/kubectl")
+	if err != nil {
+		print(err.Error())
+		return false
+	} else {
+
+		return true
+	}
+}
 
 // runUpgradeKubeadm will try to download the binary from official websites;
 func runUpgradeKubeadm(spec *operatorv1.UpgradeKubeadmCommandSpec, log logr.Logger) error {
@@ -42,7 +65,8 @@ func runUpgradeKubeadm(spec *operatorv1.UpgradeKubeadmCommandSpec, log logr.Logg
 func DownloadFromOfficialWebsite(version, bin string, log logr.Logger) error {
 	var cmd *cmd
 
-	cmd = newCmd("curl", "-L", "--remote-name-all", fmt.Sprintf(DownloadURLTemplate, version, runtime.GOARCH, bin), "-o", "/usr/bin/"+bin)
+	cmd = newCmd("curl", "-L", "--remote-name-all", fmt.Sprintf(GetDownloadURLTemplate(), version, runtime.GOARCH, bin), "-o", "/usr/bin/"+bin)
+	log.Info("download", "command", cmd.command, "args", strings.Join(cmd.args, " "))
 	donwlod, err := cmd.RunAndCapture()
 	if err != nil {
 		return errors.WithStack(errors.WithMessage(err, strings.Join(donwlod, "\n")))

@@ -19,10 +19,12 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 
+	"k8s.io/apimachinery/pkg/util/wait"
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
@@ -32,7 +34,14 @@ func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlComma
 	if spec.Local {
 		return nil
 	}
-	err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubectl", log)
+
+	err := wait.Poll(100*time.Millisecond, 300*time.Second, func() (bool, error) {
+		if err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubectl", log); err != nil {
+			log.Error(err, "Failed to download kubectl and kubelet")
+			return false, nil
+		}
+		return true, nil
+	})
 	if err != nil {
 		return err
 	}

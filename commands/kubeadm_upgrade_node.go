@@ -31,9 +31,9 @@ func runKubeadmUpgradeNode(spec *operatorv1.KubeadmUpgradeNodeCommandSpec, log l
 	var cmd *cmd
 
 	// TODO: add real dry run support
-	cmd = newCmd("kubeadm", "upgrade", "node", "--v=4")
+	cmd = newCmd("kubeadm", "upgrade", "node", "--v=5")
 	if spec.DryRun {
-		cmd = newCmd("kubeadm", "upgrade", "node", "--dry-run", "--v=4")
+		cmd = newCmd("kubeadm", "upgrade", "node", "--dry-run", "--v=5")
 	}
 
 	lines, err := cmd.RunAndCapture()

@@ -28,6 +28,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,6 +37,8 @@ func setupUpgrade() map[string]string {
 }
 
 func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec, c client.Client) *operatorv1.RuntimeTaskGroupList {
+	log := ctrl.Log.WithName("operations").WithName("Upgrade").WithValues("task", operation.Name)
+
 	// TODO support upgrade to v1.n-1~v1.n of current kubernetes server version.
 	// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
 
@@ -77,15 +80,15 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 			operatorv1.CommandDescriptor{
-				KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
-					DryRun:            dryRun,
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-				},
-			},
-			operatorv1.CommandDescriptor{
 				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
 					Local:             operation.Spec.Upgrade.Local,
+				},
+			},
+			operatorv1.CommandDescriptor{
+				KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
+					DryRun:            dryRun,
+					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
 				},
 			},
 		)
@@ -98,13 +101,13 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 	setCPSelector(&t2)
 	cpNodes, err := listNodesBySelector(c, &t2.Spec.NodeSelector)
 	if err != nil {
-		fmt.Printf("failed to list nodes: %v", err)
+		log.Info("failed to list nodes.", "error", err)
 		return nil
 	}
 	for _, cpNode := range cpNodes.Items {
-		fmt.Printf("ControlPlane node: %s; size: %d", cpNode.Name, cpNodes.Size())
+		log.Info("ControlPlane node.", "node", cpNode.Name, "items", len(cpNodes.Items), "selector", t2.Spec.NodeSelector.String())
 	}
-	if cpNodes.Size() > 1 {
+	if len(cpNodes.Items) > 1 {
 
 		t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
@@ -114,14 +117,14 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 			operatorv1.CommandDescriptor{
-				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
-					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
-				},
-			},
-			operatorv1.CommandDescriptor{
 				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
 					Local:             operation.Spec.Upgrade.Local,
+				},
+			},
+			operatorv1.CommandDescriptor{
+				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
+					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
 				},
 			},
 		)
@@ -137,7 +140,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		fmt.Printf("failed to list nodes: %v", err)
 		return nil
 	}
-	if workerNodes.Size() > 0 {
+	if len(workerNodes.Items) > 0 {
 		t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
 				KubectlDrain: &operatorv1.KubectlDrainCommandSpec{},
@@ -149,14 +152,14 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 			operatorv1.CommandDescriptor{
-				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
-					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
-				},
-			},
-			operatorv1.CommandDescriptor{
 				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
 					Local:             operation.Spec.Upgrade.Local,
+				},
+			},
+			operatorv1.CommandDescriptor{
+				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
+					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
 				},
 			},
 			operatorv1.CommandDescriptor{

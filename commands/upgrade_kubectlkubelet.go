@@ -53,18 +53,30 @@ func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlComma
 	}
 	log.Info(fmt.Sprintf("%s", strings.Join(start, "\n")))
 
-	// systemctl cannot run inside pod.
-	err = DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubelet", "/usr/bin/kubelet-"+spec.KubernetesVersion, log)
+	err = wait.Poll(100*time.Millisecond, 300*time.Second, func() (bool, error) {
+		if err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubelet", "/usr/bin/kubelet-"+spec.KubernetesVersion, log); err != nil {
+			log.Error(err, "Failed to download kubectl and kubelet")
+			return false, nil
+		}
+		return true, nil
+	})
 	if err != nil {
 		return err
 	}
 
+	// TODO stop kubelet and replace it
 	cmd = newCmd("/usr/bin/cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet")
 	start, err = cmd.RunAndCapture()
 	if err != nil {
-		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
+		// skip kubelet replacement
+		cmd = newCmd("/usr/bin/cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet-new")
+		start, err = cmd.RunAndCapture()
+		if err != nil {
+		}
+		// return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
+	} else {
+		log.Info(fmt.Sprintf("%s", strings.Join(start, "\n")))
 	}
-	log.Info(fmt.Sprintf("%s", strings.Join(start, "\n")))
 
 	return nil
 }

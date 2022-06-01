@@ -221,7 +221,7 @@ func (r *OperationReconciler) reconcileLabels(operation *operatorv1.Operation) {
 func (r *OperationReconciler) reconcileTaskGroups(operation *operatorv1.Operation, log logr.Logger) (*taskGroupReconcileList, error) {
 	// gets all the desired TaskGroup objects for the current operation
 	// Nb. this is the domain knowledge encoded into operation implementations
-	desired, err := operations.TaskGroupList(operation)
+	desired, err := operations.TaskGroupList(operation, r.Client)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get desired TaskGroup list")
 	}

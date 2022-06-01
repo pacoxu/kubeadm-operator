@@ -18,6 +18,7 @@ package operations
 
 import (
 	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
@@ -40,13 +41,13 @@ func DaemonSetNodeSelectorLabels(operation *operatorv1.Operation) (map[string]st
 }
 
 // TaskGroupList return the list of TaskGroup to be performed by an operation
-func TaskGroupList(operation *operatorv1.Operation) (*operatorv1.RuntimeTaskGroupList, error) {
+func TaskGroupList(operation *operatorv1.Operation, c client.Client) (*operatorv1.RuntimeTaskGroupList, error) {
 	if operation.Spec.RenewCertificates != nil {
 		return planRenewCertificates(operation, operation.Spec.RenewCertificates), nil
 	}
 
 	if operation.Spec.Upgrade != nil {
-		return planUpgrade(operation, operation.Spec.Upgrade), nil
+		return planUpgrade(operation, operation.Spec.Upgrade, c), nil
 	}
 
 	if operation.Spec.CustomOperation != nil {

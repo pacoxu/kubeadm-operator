@@ -173,6 +173,16 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									Name:      "kubectl-binary",
 									MountPath: "/usr/bin/kubectl",
 								},
+								// crictl is used by kubeadm upgrade apply to check the binary like `crictl`
+								{
+									Name:      "crictl",
+									MountPath: "/usr/local/bin/crictl",
+								},
+								// cp is used by kubeadm upgrade apply to run command like `cp`
+								{
+									Name:      "cp",
+									MountPath: "/usr/bin/cp",
+								},
 								{
 									Name:      "etc-kubernetes",
 									MountPath: "/etc/kubernetes",
@@ -183,16 +193,6 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								{
 									Name:      "var-lib-kubelet",
 									MountPath: "/var/lib/kubelet/",
-								},
-								// crictl is used by kubeadm upgrade apply to check the binary like `crictl`
-								{
-									Name:      "crictl",
-									MountPath: "/usr/local/bin/crictl",
-								},
-								// cp is used by kubeadm upgrade apply to run command like `cp`
-								{
-									Name:      "cp",
-									MountPath: "/usr/bin/cp",
 								},
 								// run is used to check container runtime status
 								{
@@ -205,13 +205,19 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									MountPath: "/var/lib/etcd",
 								},
 								// below are used to run `systemctl restart kubelet`
+								// sudo -it ubuntu:16.04 systemctl
+
 								{
 									Name:      "run-systemd",
-									MountPath: "/run/systemd/system",
+									MountPath: "/run/systemd",
 								},
 								{
 									Name:      "system-bus",
 									MountPath: "/var/run/dbus/system_bus_socket",
+								},
+								{
+									Name:      "fs-cgroup",
+									MountPath: "/sys/fs/cgroup",
 								},
 							},
 						},
@@ -269,7 +275,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/usr/local/bin/crictl",
-									Type: hostPathTypePtr(corev1.HostPathFile),
+									Type: hostPathTypePtr(corev1.HostPathFileOrCreate),
 								},
 							},
 						},
@@ -304,7 +310,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							Name: "run-systemd",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/run/systemd/system",
+									Path: "/run/systemd",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},
@@ -314,7 +320,16 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/var/run/dbus/system_bus_socket",
-									Type: hostPathTypePtr(corev1.HostPathFile),
+									Type: hostPathTypePtr(corev1.HostPathSocket),
+								},
+							},
+						},
+						{
+							Name: "fs-cgroup",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/sys/fs/cgroup",
+									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},
 						},
@@ -460,11 +475,11 @@ func getOwnerOperation(ctx context.Context, c client.Client, obj metav1.ObjectMe
 	return nil, errors.Errorf("missing controller ref for %s/%s", obj.Namespace, obj.Name)
 }
 
-type matchingSelector struct {
+type MatchingSelector struct {
 	selector labels.Selector
 }
 
-func (m matchingSelector) ApplyToList(opts *client.ListOptions) {
+func (m MatchingSelector) ApplyToList(opts *client.ListOptions) {
 	opts.LabelSelector = m.selector
 }
 
@@ -474,7 +489,7 @@ func listNodesBySelector(c client.Client, selector *metav1.LabelSelector) (*core
 		return nil, errors.Wrap(err, "failed to convert TaskGroup.Spec.NodeSelector to a selector")
 	}
 
-	o := matchingSelector{selector: s}
+	o := MatchingSelector{selector: s}
 
 	nodes := &corev1.NodeList{}
 	if err := c.List(

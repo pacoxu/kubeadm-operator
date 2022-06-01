@@ -59,13 +59,25 @@ func runUpgradeKubeadm(spec *operatorv1.UpgradeKubeadmCommandSpec, log logr.Logg
 		return nil
 	}
 
-	return DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubeadm", log)
+	err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubeadm", "/usr/bin/kubeadm-"+spec.KubernetesVersion, log)
+	if err != nil {
+		return err
+	}
+
+	cmd := newCmd("/usr/bin/cp", "-f", "/usr/bin/kubeadm-"+spec.KubernetesVersion, "/usr/bin/kubeadm")
+	start, err := cmd.RunAndCapture()
+	if err != nil {
+		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
+	}
+	log.Info(fmt.Sprintf("%s", strings.Join(start, "\n")))
+
+	return nil
 }
 
-func DownloadFromOfficialWebsite(version, bin string, log logr.Logger) error {
+func DownloadFromOfficialWebsite(version, bin, targetPath string, log logr.Logger) error {
 	var cmd *cmd
 
-	cmd = newCmd("curl", "-L", "--remote-name-all", fmt.Sprintf(GetDownloadURLTemplate(), version, runtime.GOARCH, bin), "-o", "/usr/bin/"+bin)
+	cmd = newCmd("curl", "-L", "--remote-name-all", fmt.Sprintf(GetDownloadURLTemplate(), version, runtime.GOARCH, bin), "-o", targetPath)
 	log.Info("download", "command", cmd.command, "args", strings.Join(cmd.args, " "))
 	donwlod, err := cmd.RunAndCapture()
 	if err != nil {
@@ -73,7 +85,7 @@ func DownloadFromOfficialWebsite(version, bin string, log logr.Logger) error {
 	}
 	log.Info(fmt.Sprintf("%s", strings.Join(donwlod, "\n")))
 
-	cmd = newCmd("chmod", "+x", "/usr/bin/"+bin)
+	cmd = newCmd("chmod", "+x", targetPath)
 	lines, err := cmd.RunAndCapture()
 	if err != nil {
 		return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))

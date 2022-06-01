@@ -253,7 +253,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/usr/bin/kubelet-new",
-									Type: hostPathTypePtr(corev1.HostPathFile),
+									Type: hostPathTypePtr(corev1.HostPathFileOrCreate),
 								},
 							},
 						},

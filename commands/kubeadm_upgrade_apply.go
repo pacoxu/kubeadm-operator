@@ -32,7 +32,7 @@ func runKubeadmUpgradeApply(spec *operatorv1.KubeadmUpgradeApplyCommandSpec, log
 	// TODO: add real dry run support
 	cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--v=4")
 	if spec.DryRun {
-		cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--dry-run", "--v=4")
+		cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--dry-run", "--v=5")
 	}
 
 	lines, err := cmd.RunAndCapture()

@@ -146,10 +146,11 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								},
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("30Mi"),
-								},
+								// TODO set a suitable limit for agent
+								// Limits: corev1.ResourceList{
+								// 	corev1.ResourceCPU:    resource.MustParse("100m"),
+								// 	corev1.ResourceMemory: resource.MustParse("30Mi"),
+								// },
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("100m"),
 									corev1.ResourceMemory: resource.MustParse("20Mi"),
@@ -168,6 +169,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								{
 									Name:      "kubelet-binary",
 									MountPath: "/usr/bin/kubelet",
+								},
+								{
+									Name:      "kubelet-new-binary",
+									MountPath: "/usr/bin/kubelet-new",
 								},
 								{
 									Name:      "kubectl-binary",
@@ -212,8 +217,8 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									MountPath: "/run/systemd",
 								},
 								{
-									Name:      "system-bus",
-									MountPath: "/var/run/dbus/system_bus_socket",
+									Name:      "var-run",
+									MountPath: "/var/run/",
 								},
 								{
 									Name:      "fs-cgroup",
@@ -239,6 +244,15 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/usr/bin/kubelet",
+									Type: hostPathTypePtr(corev1.HostPathFile),
+								},
+							},
+						},
+						{
+							Name: "kubelet-new-binary",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/usr/bin/kubelet-new",
 									Type: hostPathTypePtr(corev1.HostPathFile),
 								},
 							},
@@ -316,11 +330,11 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							},
 						},
 						{
-							Name: "system-bus",
+							Name: "var-run",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/run/dbus/system_bus_socket",
-									Type: hostPathTypePtr(corev1.HostPathSocket),
+									Path: "/var/run/",
+									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},
 						},

@@ -101,6 +101,9 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		fmt.Printf("failed to list nodes: %v", err)
 		return nil
 	}
+	for _, cpNode := range cpNodes.Items {
+		fmt.Printf("ControlPlane node: %s; size: %d", cpNode.Name, cpNodes.Size())
+	}
 	if cpNodes.Size() > 1 {
 
 		t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,

@@ -209,20 +209,9 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									Name:      "etcd-data-dir",
 									MountPath: "/var/lib/etcd",
 								},
-								// below are used to run `systemctl restart kubelet`
-								// sudo -it ubuntu:16.04 systemctl
-
-								{
-									Name:      "run-systemd",
-									MountPath: "/run/systemd",
-								},
 								{
 									Name:      "var-run",
 									MountPath: "/var/run/",
-								},
-								{
-									Name:      "fs-cgroup",
-									MountPath: "/sys/fs/cgroup",
 								},
 							},
 						},
@@ -321,28 +310,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							},
 						},
 						{
-							Name: "run-systemd",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/run/systemd",
-									Type: hostPathTypePtr(corev1.HostPathDirectory),
-								},
-							},
-						},
-						{
 							Name: "var-run",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/var/run/",
-									Type: hostPathTypePtr(corev1.HostPathDirectory),
-								},
-							},
-						},
-						{
-							Name: "fs-cgroup",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/sys/fs/cgroup",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},

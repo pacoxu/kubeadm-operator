@@ -104,9 +104,6 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		log.Info("failed to list nodes.", "error", err)
 		return nil
 	}
-	for _, cpNode := range cpNodes.Items {
-		log.Info("ControlPlane node.", "node", cpNode.Name, "items", len(cpNodes.Items), "selector", t2.Spec.NodeSelector.String())
-	}
 	if len(cpNodes.Items) > 1 {
 
 		t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,

@@ -146,10 +146,11 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								},
 							},
 							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("30Mi"),
-								},
+								// TODO set a suitable limit for agent
+								// Limits: corev1.ResourceList{
+								// 	corev1.ResourceCPU:    resource.MustParse("100m"),
+								// 	corev1.ResourceMemory: resource.MustParse("30Mi"),
+								// },
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("100m"),
 									corev1.ResourceMemory: resource.MustParse("20Mi"),
@@ -168,6 +169,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								{
 									Name:      "kubelet-binary",
 									MountPath: "/usr/bin/kubelet",
+								},
+								{
+									Name:      "kubelet-new-binary",
+									MountPath: "/usr/bin/kubelet-new",
 								},
 								{
 									Name:      "kubectl-binary",
@@ -204,20 +209,9 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									Name:      "etcd-data-dir",
 									MountPath: "/var/lib/etcd",
 								},
-								// below are used to run `systemctl restart kubelet`
-								// sudo -it ubuntu:16.04 systemctl
-
 								{
-									Name:      "run-systemd",
-									MountPath: "/run/systemd",
-								},
-								{
-									Name:      "system-bus",
-									MountPath: "/var/run/dbus/system_bus_socket",
-								},
-								{
-									Name:      "fs-cgroup",
-									MountPath: "/sys/fs/cgroup",
+									Name:      "var-run",
+									MountPath: "/var/run/",
 								},
 							},
 						},
@@ -240,6 +234,15 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/usr/bin/kubelet",
 									Type: hostPathTypePtr(corev1.HostPathFile),
+								},
+							},
+						},
+						{
+							Name: "kubelet-new-binary",
+							VolumeSource: corev1.VolumeSource{
+								HostPath: &corev1.HostPathVolumeSource{
+									Path: "/usr/bin/kubelet-new",
+									Type: hostPathTypePtr(corev1.HostPathFileOrCreate),
 								},
 							},
 						},
@@ -307,28 +310,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							},
 						},
 						{
-							Name: "run-systemd",
+							Name: "var-run",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/run/systemd",
-									Type: hostPathTypePtr(corev1.HostPathDirectory),
-								},
-							},
-						},
-						{
-							Name: "system-bus",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/run/dbus/system_bus_socket",
-									Type: hostPathTypePtr(corev1.HostPathSocket),
-								},
-							},
-						},
-						{
-							Name: "fs-cgroup",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/sys/fs/cgroup",
+									Path: "/var/run/",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},

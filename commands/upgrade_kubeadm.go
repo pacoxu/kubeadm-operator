@@ -21,10 +21,12 @@ import (
 	"net/http"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 
+	"k8s.io/apimachinery/pkg/util/wait"
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
@@ -58,8 +60,13 @@ func runUpgradeKubeadm(spec *operatorv1.UpgradeKubeadmCommandSpec, log logr.Logg
 	if spec.Local {
 		return nil
 	}
-
-	err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubeadm", "/usr/bin/kubeadm-"+spec.KubernetesVersion, log)
+	err := wait.Poll(100*time.Millisecond, 300*time.Second, func() (bool, error) {
+		if err := DownloadFromOfficialWebsite(spec.KubernetesVersion, "kubeadm", "/usr/bin/kubeadm-"+spec.KubernetesVersion, log); err != nil {
+			log.Error(err, "Failed to download kubectl and kubelet")
+			return false, nil
+		}
+		return true, nil
+	})
 	if err != nil {
 		return err
 	}

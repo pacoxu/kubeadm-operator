@@ -255,8 +255,7 @@ spec:
                                             - kubernetesVersion
                                             type: object
                                           kubeadmUpgradeKubeProxy:
-                                            description: KubeadmUpgradeApplyCommandSpec
-                                              provides...
+                                            description: not implemented yet
                                             properties:
                                               kubernetesVersion:
                                                 description: KubernetesVersion specifies

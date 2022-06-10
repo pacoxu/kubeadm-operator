@@ -64,19 +64,13 @@ func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlComma
 		return err
 	}
 
-	// TODO stop kubelet and replace it
-	cmd = newCmd("/usr/bin/cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet")
+	// see https://github.com/pacoxu/kubelet-reloader/ to add a daemon or service on nodes to replace kubelet and restart kubelet.
+	cmd = newCmd("/usr/bin/cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet-new")
 	start, err = cmd.RunAndCapture()
 	if err != nil {
-		// skip kubelet replacement
-		cmd = newCmd("/usr/bin/cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet-new")
-		start, err = cmd.RunAndCapture()
-		if err != nil {
-		}
-		// return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
+		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
 	} else {
 		log.Info(fmt.Sprintf("%s", strings.Join(start, "\n")))
 	}
-
 	return nil
 }

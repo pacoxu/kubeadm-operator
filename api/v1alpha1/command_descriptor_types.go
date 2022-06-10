@@ -43,6 +43,10 @@ type CommandDescriptor struct {
 	// +optional
 	KubectlUncordon *KubectlUncordonCommandSpec `json:"kubectlUncordon,omitempty"`
 
+	// +optional
+	// not implemented yet
+	KubeadmUpgradeKubeProxy *KubeadmUpgradeKubeProxySpec `json:"kubeadmUpgradeKubeProxy,omitempty"`
+
 	// Pass provide a dummy command for testing the kubeadm-operator workflow.
 	// +optional
 	Pass *PassCommandSpec `json:"pass,omitempty"`

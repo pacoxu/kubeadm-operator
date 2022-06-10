@@ -46,7 +46,7 @@ type UpgradeOperationSpec struct {
 	// If this is true, kube-proxy will not be upgraded at first. See more details in https://github.com/kubernetes/kubeadm/issues/2346
 	// Then kube-proxy will be upgraded after all apiserver are upgraded.
 	// +optional
-	UpgradeKubeProxyAtLast bool `json:upgradeKubeProxyAtLast,omitempty`
+	UpgradeKubeProxyAtLast bool `json:"upgradeKubeProxyAtLast,omitempty"`
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file

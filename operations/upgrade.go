@@ -89,6 +89,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
 					DryRun:            dryRun,
 					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					SkipKubeProxy:     operation.Spec.Upgrade.UpgradeKubeProxyAtLast,
 				},
 			},
 		)
@@ -128,17 +129,29 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		items = append(items, t2)
 	}
 
+	if operation.Spec.Upgrade.UpgradeKubeProxyAtLast {
+		t3 := createBasicTaskGroup(operation, "03", "upgrade-kube-proxy")
+		t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
+			operatorv1.CommandDescriptor{
+				KubeadmUpgradeKubeProxy: &operatorv1.KubeadmUpgradeKubeProxySpec{
+					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+				},
+			},
+		)
+		items = append(items, t3)
+	}
+
 	// this can be skipped if there are no worker nodes.
 	// currently it depends on the selector
-	t3 := createBasicTaskGroup(operation, "02", "upgrade-w")
-	setWSelector(&t3)
-	workerNodes, err := listNodesBySelector(c, &t3.Spec.NodeSelector)
+	t4 := createBasicTaskGroup(operation, "04", "upgrade-w")
+	setWSelector(&t4)
+	workerNodes, err := listNodesBySelector(c, &t4.Spec.NodeSelector)
 	if err != nil {
 		fmt.Printf("failed to list nodes: %v", err)
 		return nil
 	}
 	if len(workerNodes.Items) > 0 {
-		t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
+		t4.Spec.Template.Spec.Commands = append(t4.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
 				KubectlDrain: &operatorv1.KubectlDrainCommandSpec{},
 			},
@@ -163,7 +176,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				KubectlUncordon: &operatorv1.KubectlUncordonCommandSpec{},
 			},
 		)
-		items = append(items, t3)
+		items = append(items, t4)
 	}
 
 	return &operatorv1.RuntimeTaskGroupList{

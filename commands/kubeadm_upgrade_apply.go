@@ -28,6 +28,8 @@ import (
 
 // runKubeadmUpgradeApply runs the kubeadm upgrade apply command
 func runKubeadmUpgradeApply(spec *operatorv1.KubeadmUpgradeApplyCommandSpec, log logr.Logger) error {
+	// TODO spec.SkipKubeProxy is not implemented yet
+
 	var cmd *cmd
 	// TODO: add real dry run support
 	cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--v=4")

@@ -43,6 +43,10 @@ type CommandDescriptor struct {
 	// +optional
 	KubectlUncordon *KubectlUncordonCommandSpec `json:"kubectlUncordon,omitempty"`
 
+	// +optional
+	// not implemented yet
+	KubeadmUpgradeKubeProxy *KubeadmUpgradeKubeProxySpec `json:"kubeadmUpgradeKubeProxy,omitempty"`
+
 	// Pass provide a dummy command for testing the kubeadm-operator workflow.
 	// +optional
 	Pass *PassCommandSpec `json:"pass,omitempty"`
@@ -82,12 +86,20 @@ type UpgradeKubeadmCommandSpec struct {
 
 // KubeadmUpgradeApplyCommandSpec provides...
 type KubeadmUpgradeApplyCommandSpec struct {
-	// +optional
 	// KubernetesVersion specifies the target kubernetes version
 	// If the version is empty, we will skip this command.
 	KubernetesVersion string `json:"kubernetesVersion"`
 	// for dry run mode
 	DryRun bool `json:"dryRun,omitempty"`
+	// skip kube-proxy upgrade
+	SkipKubeProxy bool `json:"skipKubePorxy,omitempty"`
+}
+
+// KubeadmUpgradeApplyCommandSpec provides...
+type KubeadmUpgradeKubeProxySpec struct {
+	// KubernetesVersion specifies the target kubernetes version
+	// If the version is empty, we will skip this command.
+	KubernetesVersion string `json:"kubernetesVersion"`
 }
 
 // TODO download the specified version bin and replace it in the node
@@ -123,7 +135,6 @@ type KubectlUncordonCommandSpec struct {
 // TODO download the specified version bin and replace it in the node
 // UpgradeKubeletAndKubeactlCommandSpec provides...
 type UpgradeKubeletAndKubeactlCommandSpec struct {
-	// +optional
 	// KubernetesVersion specifies the target kubernetes version
 	// If the version is empty, we will skip this command.
 	KubernetesVersion string `json:"kubernetesVersion"`

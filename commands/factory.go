@@ -59,6 +59,9 @@ func RunCommand(c *operatorv1.CommandDescriptor, log logr.Logger) error {
 	if c.UpgradeKubeletAndKubeactl != nil {
 		return runUpgradeKubectlAndKubelet(c.UpgradeKubeletAndKubeactl, log)
 	}
+	if c.KubeadmUpgradeKubeProxy != nil {
+		return runUpgradeKubeProxy(c.KubeadmUpgradeKubeProxy, log)
+	}
 
 	if c.Pass != nil {
 		return nil

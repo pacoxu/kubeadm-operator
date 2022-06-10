@@ -248,6 +248,23 @@ spec:
                                                   the version is empty, we will skip
                                                   this command.
                                                 type: string
+                                              skipKubePorxy:
+                                                description: skip kube-proxy upgrade
+                                                type: boolean
+                                            required:
+                                            - kubernetesVersion
+                                            type: object
+                                          kubeadmUpgradeKubeProxy:
+                                            description: not implemented yet
+                                            properties:
+                                              kubernetesVersion:
+                                                description: KubernetesVersion specifies
+                                                  the target kubernetes version If
+                                                  the version is empty, we will skip
+                                                  this command.
+                                                type: string
+                                            required:
+                                            - kubernetesVersion
                                             type: object
                                           kubeadmUpgradeNode:
                                             description: TODO download the specified
@@ -323,6 +340,8 @@ spec:
                                                   download the binary from official
                                                   websites
                                                 type: boolean
+                                            required:
+                                            - kubernetesVersion
                                             type: object
                                           wait:
                                             description: Wait pauses the execution
@@ -435,6 +454,16 @@ spec:
                       version
                     type: string
                   local:
+                    description: Local is used to determine whether to use local binary
+                      or download from internet.
+                    type: boolean
+                  upgradeKubeProxyAtLast:
+                    description: UpgradeKubeProxyAtLast by default is false. TODO
+                      UpgradeKubeProxyAtLast can be true by default if this should
+                      be default behavior, needs more disscussions. If this is true,
+                      kube-proxy will not be upgraded at first. See more details in
+                      https://github.com/kubernetes/kubeadm/issues/2346 Then kube-proxy
+                      will be upgraded after all apiserver are upgraded.
                     type: boolean
                 required:
                 - kubernetesVersion

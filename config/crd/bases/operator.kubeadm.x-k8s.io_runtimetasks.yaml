@@ -83,6 +83,21 @@ spec:
                           description: KubernetesVersion specifies the target kubernetes
                             version If the version is empty, we will skip this command.
                           type: string
+                        skipKubePorxy:
+                          description: skip kube-proxy upgrade
+                          type: boolean
+                      required:
+                      - kubernetesVersion
+                      type: object
+                    kubeadmUpgradeKubeProxy:
+                      description: not implemented yet
+                      properties:
+                        kubernetesVersion:
+                          description: KubernetesVersion specifies the target kubernetes
+                            version If the version is empty, we will skip this command.
+                          type: string
+                      required:
+                      - kubernetesVersion
                       type: object
                     kubeadmUpgradeNode:
                       description: TODO download the specified version bin and replace
@@ -143,6 +158,8 @@ spec:
                             will use the binary in /usr/bin If not, operator will
                             download the binary from official websites
                           type: boolean
+                      required:
+                      - kubernetesVersion
                       type: object
                     wait:
                       description: Wait pauses the execution on the next command for

@@ -166,10 +166,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									Name:      "kubeadm-binary",
 									MountPath: "/usr/bin/kubeadm",
 								},
-								{
-									Name:      "kubelet-binary",
-									MountPath: "/usr/bin/kubelet",
-								},
+								// {
+								// 	Name:      "kubelet-binary",
+								// 	MountPath: "/usr/bin/kubelet",
+								// },
 								{
 									Name:      "kubelet-new-binary",
 									MountPath: "/usr/bin/kubelet-new",
@@ -228,15 +228,15 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								},
 							},
 						},
-						{
-							Name: "kubelet-binary",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/bin/kubelet",
-									Type: hostPathTypePtr(corev1.HostPathFile),
-								},
-							},
-						},
+						// {
+						// 	Name: "kubelet-binary",
+						// 	VolumeSource: corev1.VolumeSource{
+						// 		HostPath: &corev1.HostPathVolumeSource{
+						// 			Path: "/usr/bin/kubelet",
+						// 			Type: hostPathTypePtr(corev1.HostPathFile),
+						// 		},
+						// 	},
+						// },
 						{
 							Name: "kubelet-new-binary",
 							VolumeSource: corev1.VolumeSource{

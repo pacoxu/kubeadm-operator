@@ -33,7 +33,9 @@ func planRenewCertificates(operation *operatorv1.Operation, spec *operatorv1.Ren
 	setCPSelector(&t1)
 	t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
 		operatorv1.CommandDescriptor{
-			KubeadmRenewCertificates: &operatorv1.KubeadmRenewCertsCommandSpec{},
+			KubeadmRenewCertificates: &operatorv1.KubeadmRenewCertsCommandSpec{
+				Commands: operation.Spec.RenewCertificates.Commands,
+			},
 		},
 	)
 	items = append(items, t1)

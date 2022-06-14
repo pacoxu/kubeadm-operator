@@ -32,6 +32,8 @@ func runKubeadmRenewCertificates(spec *operatorv1.KubeadmRenewCertsCommandSpec, 
 		spec.Commands = []string{"all"}
 	}
 
+	log.Info("Running kubeadm renew certificates command", "commands", spec.Commands)
+
 	for _, command := range spec.Commands {
 		cmd := newCmd("kubeadm", "certs", "renew", command)
 

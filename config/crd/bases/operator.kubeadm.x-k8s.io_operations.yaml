@@ -444,6 +444,15 @@ spec:
               renewCertificates:
                 description: RenewCertificates provide declarative support for the
                   kubeadm upgrade workflow.
+                properties:
+                  commands:
+                    description: 'Commands is a list of commands to run: all, apiserver,
+                      apiserver-etcd-client, apiserver-kubelet-client, controller-manager.conf,
+                      etcd-healthcheck-client, etcd-peer, etcd-server, front-proxy-client,
+                      scheduler.conf'
+                    items:
+                      type: string
+                    type: array
                 type: object
               upgrade:
                 description: Upgrade provide declarative support for the kubeadm upgrade

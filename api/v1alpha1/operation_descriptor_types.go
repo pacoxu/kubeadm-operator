@@ -54,6 +54,10 @@ type UpgradeOperationSpec struct {
 
 // RenewCertificatesOperationSpec provide declarative support for the kubeadm upgrade workflow.
 type RenewCertificatesOperationSpec struct {
+	// +optional
+	// Commands is a list of commands to run: all, apiserver, apiserver-etcd-client, apiserver-kubelet-client,
+	// controller-manager.conf, etcd-healthcheck-client, etcd-peer, etcd-server, front-proxy-client, scheduler.conf
+	Commands []string `json:"commands"`
 
 	// INSERT ADDITIONAL SPEC FIELDS -
 	// Important: Run "make" to regenerate code after modifying this file

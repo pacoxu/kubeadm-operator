@@ -25,15 +25,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 # distroless cannot run `kubeadm upgrade apply` smoothly
 # FROM gcr.m.daocloud.io/distroless/static:nonroot
 FROM docker.m.daocloud.io/ubuntu
-RUN apt-get update -q -y && apt-get install -q -y curl systemd && apt clean all
-RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in ; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done);
-RUN rm -rf /lib/systemd/system/multi-user.target.wants/;
-RUN rm -rf /etc/systemd/system/.wants/;
-RUN rm -rf /lib/systemd/system/local-fs.target.wants/;
-RUN rm -rf /lib/systemd/system/sockets.target.wants/udev;
-RUN rm -rf /lib/systemd/system/sockets.target.wants/initctl;
-RUN rm -rf /lib/systemd/system/basic.target.wants/;
-RUN rm -rf /lib/systemd/system/anaconda.target.wants/*;
+RUN apt-get update -q -y && apt-get install -q -y curl && apt clean all
 
 WORKDIR /
 COPY --from=builder /workspace/manager .

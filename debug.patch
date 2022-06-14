@@ -1,0 +1,13 @@
+diff --git a/cmd/kubeadm/operator/controllers/util.go b/cmd/kubeadm/operator/controllers/util.go
+index a3a1122471b..e6b57592836 100644
+--- a/cmd/kubeadm/operator/controllers/util.go
++++ b/cmd/kubeadm/operator/controllers/util.go
+@@ -172,7 +172,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
+ 						},
+ 					},
+ 					TerminationGracePeriodSeconds: pointer.Int64Ptr(10),
+-					HostNetwork:                   true,
++					HostNetwork:                   false,
+ 					Volumes: []corev1.Volume{
+ 						{
+ 							Name: "kubeadm-binary",

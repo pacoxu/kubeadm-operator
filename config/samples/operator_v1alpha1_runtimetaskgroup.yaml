@@ -5,7 +5,7 @@ metadata:
 spec:
   nodeSelector:
     matchLabels:
-      node-role.kubernetes.io/control-plane: ""
+      node-role.kubernetes.io/master: ""
   selector:
     matchLabels:
       app: a

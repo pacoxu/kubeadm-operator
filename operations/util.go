@@ -24,46 +24,6 @@ import (
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-func createUpgradeApplyTaskGroup(operation *operatorv1.Operation, taskdeploymentOrder string, taskdeploymentName string) operatorv1.RuntimeTaskGroup {
-	gv := operatorv1.GroupVersion
-
-	labels := map[string]string{}
-	for k, v := range operation.Labels {
-		labels[k] = v
-	}
-	labels[operatorv1.TaskGroupNameLabel] = taskdeploymentName
-	labels[operatorv1.TaskGroupOrderLabel] = taskdeploymentOrder
-
-	return operatorv1.RuntimeTaskGroup{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       gv.WithKind("TaskGroup").Kind,
-			APIVersion: gv.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            fmt.Sprintf("%s-%s-%s", operation.Name, taskdeploymentOrder, taskdeploymentName), //TODO: GeneratedName?
-			Labels:          labels,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(operation, operation.GroupVersionKind())},
-		},
-		Spec: operatorv1.RuntimeTaskGroupSpec{
-			Selector: metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: operatorv1.RuntimeTaskTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:            labels,
-					CreationTimestamp: metav1.Now(),
-				},
-				Spec: operatorv1.RuntimeTaskSpec{
-					Commands: []operatorv1.CommandDescriptor{},
-				},
-			},
-		},
-		Status: operatorv1.RuntimeTaskGroupStatus{
-			Phase: string(operatorv1.OperationPhasePending),
-		},
-	}
-}
-
 func createBasicTaskGroup(operation *operatorv1.Operation, taskdeploymentOrder string, taskdeploymentName string) operatorv1.RuntimeTaskGroup {
 	gv := operatorv1.GroupVersion
 
@@ -104,12 +64,10 @@ func createBasicTaskGroup(operation *operatorv1.Operation, taskdeploymentOrder s
 	}
 }
 
-// use control-plane since v1.20
-// to support older version, we can manually label `master` node with control-plane.
 func setCPSelector(t *operatorv1.RuntimeTaskGroup) {
 	t.Spec.NodeSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"node-role.kubernetes.io/control-plane": "",
+			"node-role.kubernetes.io/master": "",
 		},
 	}
 }
@@ -117,7 +75,7 @@ func setCPSelector(t *operatorv1.RuntimeTaskGroup) {
 func setCP1Selector(t *operatorv1.RuntimeTaskGroup) {
 	t.Spec.NodeSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"node-role.kubernetes.io/control-plane": "",
+			"node-role.kubernetes.io/master": "",
 		},
 	}
 	t.Spec.NodeFilter = string(operatorv1.RuntimeTaskGroupNodeFilterHead)
@@ -126,7 +84,7 @@ func setCP1Selector(t *operatorv1.RuntimeTaskGroup) {
 func setCPNSelector(t *operatorv1.RuntimeTaskGroup) {
 	t.Spec.NodeSelector = metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			"node-role.kubernetes.io/control-plane": "",
+			"node-role.kubernetes.io/master": "",
 		},
 	}
 	t.Spec.NodeFilter = string(operatorv1.RuntimeTaskGroupNodeFilterTail)
@@ -136,7 +94,7 @@ func setWSelector(t *operatorv1.RuntimeTaskGroup) {
 	t.Spec.NodeSelector = metav1.LabelSelector{
 		MatchExpressions: []metav1.LabelSelectorRequirement{
 			{
-				Key:      "node-role.kubernetes.io/control-plane",
+				Key:      "node-role.kubernetes.io/master",
 				Operator: metav1.LabelSelectorOpDoesNotExist,
 			},
 		},
@@ -159,7 +117,7 @@ func fixupCustomTaskGroup(operation *operatorv1.Operation, taskgroup operatorv1.
 	taskgroup.SetLabels(labels)
 	taskgroup.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(operation, operation.GroupVersionKind())})
 	taskgroup.Spec.Selector.MatchLabels = labels
-	taskgroup.Spec.Template.GetObjectMeta().SetLabels(labels)
+	taskgroup.Spec.Template.SetLabels(labels)
 	taskgroup.Spec.Template.SetCreationTimestamp(metav1.Now())
 	taskgroup.Status = operatorv1.RuntimeTaskGroupStatus{
 		Phase: string(operatorv1.OperationPhasePending),

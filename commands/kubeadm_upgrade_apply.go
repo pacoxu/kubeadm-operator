@@ -17,33 +17,20 @@ limitations under the License.
 package commands
 
 import (
-	"fmt"
-	"strings"
+	"os/exec"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// runKubeadmUpgradeApply runs the kubeadm upgrade apply command
 func runKubeadmUpgradeApply(spec *operatorv1.KubeadmUpgradeApplyCommandSpec, log logr.Logger) error {
-	// TODO spec.SkipKubeProxy is not implemented yet
-
-	var cmd *cmd
-	// TODO: add real dry run support
-	cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--v=4")
-	if spec.DryRun {
-		cmd = newCmd("kubeadm", "upgrade", "apply", spec.KubernetesVersion, "--yes", "--dry-run", "--v=5")
-	}
-
-	lines, err := cmd.RunAndCapture()
+	cmd := exec.Command(spec.Cmd, "upgrade", "apply", spec.Version, "-y")
+	_, err := cmd.Output()
 	if err != nil {
-		log.Error(err, "kubeadm upgrade apply failed", strings.Join(lines, "\n"))
-		return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
+		log.Error(err, "fail to upgrade cluster", "target version", spec.Version)
+		return err
 	}
-
-	log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
-
-	return nil
+	log.Info("Upgrade apply sucessfully executed")
+	return err
 }

@@ -182,69 +182,34 @@ spec:
                             kubeadmRenewCertificates:
                               description: KubeadmRenewCertsCommandSpec provides...
                               properties:
-                                commands:
-                                  description: 'Commands is a list of commands to
-                                    run: all, apiserver, apiserver-etcd-client, apiserver-kubelet-client,
-                                    controller-manager.conf, etcd-healthcheck-client,
-                                    etcd-peer, etcd-server, front-proxy-client, scheduler.conf'
-                                  items:
-                                    type: string
-                                  type: array
+                                args:
+                                  type: string
+                                cmd:
+                                  type: string
+                              required:
+                              - args
+                              - cmd
                               type: object
                             kubeadmUpgradeApply:
-                              description: KubeadmUpgradeApplyCommandSpec provides...
+                              description: KubeadmUpgradeApplyCommandSpec provides
+                                the binary and the target version to upgrade.
                               properties:
-                                dryRun:
-                                  description: for dry run mode
-                                  type: boolean
-                                kubernetesVersion:
-                                  description: KubernetesVersion specifies the target
-                                    kubernetes version If the version is empty, we
-                                    will skip this command.
+                                cmd:
                                   type: string
-                                skipKubePorxy:
-                                  description: skip kube-proxy upgrade
-                                  type: boolean
-                              required:
-                              - kubernetesVersion
-                              type: object
-                            kubeadmUpgradeKubeProxy:
-                              description: not implemented yet
-                              properties:
-                                kubernetesVersion:
-                                  description: KubernetesVersion specifies the target
-                                    kubernetes version If the version is empty, we
-                                    will skip this command.
+                                version:
                                   type: string
                               required:
-                              - kubernetesVersion
+                              - cmd
+                              - version
                               type: object
                             kubeadmUpgradeNode:
-                              description: TODO download the specified version bin
-                                and replace it in the node KubeadmUpgradeNodeCommandSpec
-                                provides...
-                              properties:
-                                dryRun:
-                                  description: for dry run mode
-                                  type: boolean
+                              description: KubeadmUpgradeNodeCommandSpec provides...
                               type: object
                             kubectlDrain:
                               description: KubectlDrainCommandSpec provides...
-                              properties:
-                                nodes:
-                                  description: Nodes is a list of nodes to uncordon
-                                  items:
-                                    type: string
-                                  type: array
                               type: object
                             kubectlUncordon:
                               description: KubectlUncordonCommandSpec provides...
-                              properties:
-                                nodes:
-                                  description: Nodes is a list of nodes to uncordon
-                                  items:
-                                    type: string
-                                  type: array
                               type: object
                             pass:
                               description: Pass provide a dummy command for testing
@@ -254,38 +219,16 @@ spec:
                               description: PreflightCommandSpec provides...
                               type: object
                             upgradeKubeadm:
-                              description: UpgradeKubeadmCommandSpec provides...
+                              description: UpgradeKubeadmCommandSpec provides kubeadm's
+                                target version to upgrade.
                               properties:
-                                kubernetesVersion:
-                                  description: KubernetesVersion specifies the target
-                                    kubernetes version If the version is empty, we
-                                    will skip this command.
+                                version:
                                   type: string
-                                local:
-                                  description: Local is by default true. If true,
-                                    operator will use the binary in /usr/bin If not,
-                                    operator will download the binary from official
-                                    websites
-                                  type: boolean
+                              required:
+                              - version
                               type: object
                             upgradeKubeletAndKubeactl:
-                              description: TODO download the specified version bin
-                                and replace it in the node UpgradeKubeletAndKubeactlCommandSpec
-                                provides...
-                              properties:
-                                kubernetesVersion:
-                                  description: KubernetesVersion specifies the target
-                                    kubernetes version If the version is empty, we
-                                    will skip this command.
-                                  type: string
-                                local:
-                                  description: Local is by default true. If true,
-                                    operator will use the binary in /usr/bin If not,
-                                    operator will download the binary from official
-                                    websites
-                                  type: boolean
-                              required:
-                              - kubernetesVersion
+                              description: UpgradeKubeletAndKubeactlCommandSpec provides...
                               type: object
                             wait:
                               description: Wait pauses the execution on the next command

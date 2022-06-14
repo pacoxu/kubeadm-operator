@@ -36,27 +36,16 @@ type OperatorDescriptor struct {
 type UpgradeOperationSpec struct {
 	// KubernetesVersion specifies the target kubernetes version
 	KubernetesVersion string `json:"kubernetesVersion"`
-
-	// Local is used to determine whether to use local binary or download from internet.
+	// KubeadmVersion specifies the target kubeadm version
 	// +optional
-	Local bool `json:"local,omitempty"`
-
-	// UpgradeKubeProxyAtLast by default is false.
-	// TODO UpgradeKubeProxyAtLast can be true by default if this should be default behavior, needs more disscussions.
-	// If this is true, kube-proxy will not be upgraded at first. See more details in https://github.com/kubernetes/kubeadm/issues/2346
-	// Then kube-proxy will be upgraded after all apiserver are upgraded.
-	// +optional
-	UpgradeKubeProxyAtLast bool `json:"upgradeKubeProxyAtLast,omitempty"`
-
-	// INSERT ADDITIONAL SPEC FIELDS -
-	// Important: Run "make" to regenerate code after modifying this file
+	KubeadmVersion string `json:"kubeadmVersion"`
+	Cmd            string `json:"cmd"`
 }
 
 // RenewCertificatesOperationSpec provide declarative support for the kubeadm upgrade workflow.
 type RenewCertificatesOperationSpec struct {
-
-	// INSERT ADDITIONAL SPEC FIELDS -
-	// Important: Run "make" to regenerate code after modifying this file
+	Args string `json:"args"`
+	Cmd  string `json:"cmd"`
 }
 
 // CustomOperationSpec enable definition of custom list of RuntimeTaskGroup.

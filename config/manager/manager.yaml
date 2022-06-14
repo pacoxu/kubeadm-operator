@@ -39,11 +39,12 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-        image: daocloud.io/daocloud/kubeadm-operator:v0.0.5-dev
+        image: jungler/controller:latest
         name: manager
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
-            cpu: 200m
+            cpu: 100m
             memory: 30Mi
           requests:
             cpu: 100m

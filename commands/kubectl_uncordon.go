@@ -17,26 +17,11 @@ limitations under the License.
 package commands
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// Uncordon specified nodes
 func runKubectlUncordon(spec *operatorv1.KubectlUncordonCommandSpec, log logr.Logger) error {
-	for _, node := range spec.Nodes {
-		cmd := newCmd("kubectl", "uncordon", node)
-
-		lines, err := cmd.RunAndCapture()
-		if err != nil {
-			return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
-		}
-
-		log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
-	}
 	return nil
 }

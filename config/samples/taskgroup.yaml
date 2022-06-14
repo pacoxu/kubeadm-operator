@@ -1,0 +1,48 @@
+apiVersion: v1
+items:
+- apiVersion: operator.kubeadm.x-k8s.io/v1alpha1
+  kind: RuntimeTaskGroup
+  metadata:
+    creationTimestamp: "2022-03-23T05:44:28Z"
+    generation: 1
+    labels:
+      operator.kubeadm.x-k8s.io/operation: upgrade
+      operator.kubeadm.x-k8s.io/order: "01"
+      operator.kubeadm.x-k8s.io/taskgroup: upgrade-cp-1
+      operator.kubeadm.x-k8s.io/uid: 4d977a97-aa6c-11ec-b5d2-eaee3ab4c127
+    name: upgrade-01-upgrade-cp-1
+    ownerReferences:
+    - apiVersion: operator.kubeadm.x-k8s.io/v1alpha1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Operation
+      name: upgrade
+      uid: 5f063900-81d9-460b-8ce4-765af489756e
+    resourceVersion: "3797228"
+    uid: 583e25b8-525d-4cbc-ad5f-f3ff021d6139
+  spec:
+    nodeFilter: Head
+    nodeSelector:
+      matchLabels:
+        node-role.kubernetes.io/master: ""
+    selector:
+      matchLabels:
+        operator.kubeadm.x-k8s.io/operation: upgrade
+        operator.kubeadm.x-k8s.io/order: "01"
+        operator.kubeadm.x-k8s.io/taskgroup: upgrade-cp-1
+        operator.kubeadm.x-k8s.io/uid: 4d977a97-aa6c-11ec-b5d2-eaee3ab4c127
+    template:
+      metadata: {}
+      spec:
+        commands:
+        - upgradeKubeadm: {}
+        - kubeadmUpgradeApply: {}
+        - upgradeKubeletAndKubeactl: {}
+  status:
+    nodes: 1
+    phase: Running
+    startTime: "2022-03-23T05:44:29Z"
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

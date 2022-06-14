@@ -36,6 +36,10 @@ func RunCommand(c *operatorv1.CommandDescriptor, log logr.Logger) error {
 		return runKubeadmRenewCertificates(c.KubeadmRenewCertificates, log)
 	}
 
+	if c.UpgradeKubeadm != nil {
+		return runUpgradeKubeadm(c.UpgradeKubeadm, log)
+	}
+
 	if c.KubeadmUpgradeApply != nil {
 		return runKubeadmUpgradeApply(c.KubeadmUpgradeApply, log)
 	}
@@ -52,15 +56,8 @@ func RunCommand(c *operatorv1.CommandDescriptor, log logr.Logger) error {
 		return runKubectlUncordon(c.KubectlUncordon, log)
 	}
 
-	if c.UpgradeKubeadm != nil {
-		return runUpgradeKubeadm(c.UpgradeKubeadm, log)
-	}
-
 	if c.UpgradeKubeletAndKubeactl != nil {
 		return runUpgradeKubectlAndKubelet(c.UpgradeKubeletAndKubeactl, log)
-	}
-	if c.KubeadmUpgradeKubeProxy != nil {
-		return runUpgradeKubeProxy(c.KubeadmUpgradeKubeProxy, log)
 	}
 
 	if c.Pass != nil {

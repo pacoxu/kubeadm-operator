@@ -17,31 +17,13 @@ limitations under the License.
 package commands
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// "kubeadm upgrade node" on current node
+// Dave ... all those is just return.
 func runKubeadmUpgradeNode(spec *operatorv1.KubeadmUpgradeNodeCommandSpec, log logr.Logger) error {
-	var cmd *cmd
-
-	// TODO: add real dry run support
-	cmd = newCmd("kubeadm", "upgrade", "node", "--v=5")
-	if spec.DryRun {
-		cmd = newCmd("kubeadm", "upgrade", "node", "--dry-run", "--v=5")
-	}
-
-	lines, err := cmd.RunAndCapture()
-	if err != nil {
-		return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
-	}
-
-	log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
-
+	log.WithValues("upgradenode-dave", "upgradedone").Info("upgrading node")
 	return nil
 }

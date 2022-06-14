@@ -17,30 +17,19 @@ limitations under the License.
 package commands
 
 import (
-	"fmt"
-	"strings"
+	"os/exec"
 
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
 )
 
-// runKubeadmRenewCertificates run the command on control plane nodes
 func runKubeadmRenewCertificates(spec *operatorv1.KubeadmRenewCertsCommandSpec, log logr.Logger) error {
-	if len(spec.Commands) == 0 {
-		spec.Commands = []string{"all"}
+	cmd := exec.Command(spec.Cmd, "certs", "renew", spec.Args)
+	_, err := cmd.Output()
+	if err != nil {
+		log.Error(err, "fail to renew certificates", "certs", spec.Args)
+		return err
 	}
-
-	for _, command := range spec.Commands {
-		cmd := newCmd("kubeadm", "certs", "renew", command)
-
-		lines, err := cmd.RunAndCapture()
-		if err != nil {
-			return errors.WithStack(errors.WithMessage(err, strings.Join(lines, "\n")))
-		}
-
-		log.Info(fmt.Sprintf("%s", strings.Join(lines, "\n")))
-	}
-	return nil
+	return err
 }

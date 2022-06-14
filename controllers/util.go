@@ -119,7 +119,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 				Spec: corev1.PodSpec{
 					Tolerations: []corev1.Toleration{
 						{
-							Key:    "node-role.kubernetes.io/control-plane",
+							Key:    "node-role.kubernetes.io/master",
 							Effect: corev1.TaintEffectNoSchedule,
 						},
 					},
@@ -130,9 +130,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							Command: []string{
 								"/manager",
 							},
+							ImagePullPolicy: "IfNotPresent",
 							Args: []string{
 								"--mode=agent",
-								"--agent-node-name=$(MY_NODE_NAME)",
+								"--agent-node-name=$(MY_NODE_NAME)", // Dave... shouldn't this got passed directly?
 								fmt.Sprintf("--agent-operation=%s", operation.Name),
 							},
 							Env: []corev1.EnvVar{
@@ -146,20 +147,18 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								},
 							},
 							Resources: corev1.ResourceRequirements{
-								// TODO set a suitable limit for agent
-								// Limits: corev1.ResourceList{
-								// 	corev1.ResourceCPU:    resource.MustParse("100m"),
-								// 	corev1.ResourceMemory: resource.MustParse("30Mi"),
-								// },
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("300m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
+								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("100m"),
-									corev1.ResourceMemory: resource.MustParse("20Mi"),
+									corev1.ResourceCPU:    resource.MustParse("300m"),
+									corev1.ResourceMemory: resource.MustParse("100Mi"),
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
+								RunAsUser:  pointer.Int64Ptr(0),
 								Privileged: pointer.BoolPtr(true),
-								// TODO use non-root user: currently the /etc/kubernetes need root permissions
-								// RunAsUser: pointer.Int64Ptr(0),
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
@@ -167,51 +166,25 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									MountPath: "/usr/bin/kubeadm",
 								},
 								{
-									Name:      "kubelet-binary",
-									MountPath: "/usr/bin/kubelet",
-								},
-								{
-									Name:      "kubelet-new-binary",
-									MountPath: "/usr/bin/kubelet-new",
-								},
-								{
-									Name:      "kubectl-binary",
-									MountPath: "/usr/bin/kubectl",
-								},
-								// crictl is used by kubeadm upgrade apply to check the binary like `crictl`
-								{
-									Name:      "crictl",
-									MountPath: "/usr/local/bin/crictl",
-								},
-								// cp is used by kubeadm upgrade apply to run command like `cp`
-								{
-									Name:      "cp",
-									MountPath: "/usr/bin/cp",
-								},
-								{
 									Name:      "etc-kubernetes",
 									MountPath: "/etc/kubernetes",
 								},
-								// TODO: use a different volume for the certificates when kubeadm upgrade apply.
-								// "kubeadm upgrade node" may use different dirs
-								// var-lib-kubelet is used by kubeadm upgrade apply to store the certificates and /var/lib/kubelet/kubeadm-flags.env
 								{
-									Name:      "var-lib-kubelet",
-									MountPath: "/var/lib/kubelet/",
+									Name:      "kubelet-pki",
+									MountPath: "/var/lib/kubelet/pki",
 								},
-								// run is used to check container runtime status
 								{
-									Name:      "run",
-									MountPath: "/run",
+									Name:      "crictl",
+									MountPath: "/usr/bin/crictl",
 								},
-								// /var/lib/etcd is for etcd back during kubeadm upgrade apply
 								{
-									Name:      "etcd-data-dir",
+									Name:      "dockershim",
+									MountPath: "/var/run/dockershim.sock",
+								},
+								// for etcd backup
+								{
+									Name:      "etcd",
 									MountPath: "/var/lib/etcd",
-								},
-								{
-									Name:      "var-run",
-									MountPath: "/var/run/",
 								},
 							},
 						},
@@ -219,33 +192,6 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 					TerminationGracePeriodSeconds: pointer.Int64Ptr(10),
 					HostNetwork:                   true,
 					Volumes: []corev1.Volume{
-						{
-							Name: "kubectl-binary",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/bin/kubectl",
-									Type: hostPathTypePtr(corev1.HostPathFile),
-								},
-							},
-						},
-						{
-							Name: "kubelet-binary",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/bin/kubelet",
-									Type: hostPathTypePtr(corev1.HostPathFile),
-								},
-							},
-						},
-						{
-							Name: "kubelet-new-binary",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/bin/kubelet-new",
-									Type: hostPathTypePtr(corev1.HostPathFileOrCreate),
-								},
-							},
-						},
 						{
 							Name: "kubeadm-binary",
 							VolumeSource: corev1.VolumeSource{
@@ -265,10 +211,10 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							},
 						},
 						{
-							Name: "var-lib-kubelet",
+							Name: "kubelet-pki",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/lib/kubelet",
+									Path: "/var/lib/kubelet/pki",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},
@@ -277,43 +223,25 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							Name: "crictl",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/local/bin/crictl",
-									Type: hostPathTypePtr(corev1.HostPathFileOrCreate),
-								},
-							},
-						},
-						{
-							Name: "cp",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/bin/cp",
+									Path: "/usr/bin/crictl",
 									Type: hostPathTypePtr(corev1.HostPathFile),
 								},
 							},
 						},
 						{
-							Name: "run",
+							Name: "dockershim",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/run",
-									Type: hostPathTypePtr(corev1.HostPathDirectory),
+									Path: "/var/run/dockershim.sock",
+									Type: hostPathTypePtr(corev1.HostPathSocket),
 								},
 							},
 						},
 						{
-							Name: "etcd-data-dir",
+							Name: "etcd",
 							VolumeSource: corev1.VolumeSource{
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/var/lib/etcd",
-									Type: hostPathTypePtr(corev1.HostPathDirectory),
-								},
-							},
-						},
-						{
-							Name: "var-run",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/var/run/",
 									Type: hostPathTypePtr(corev1.HostPathDirectory),
 								},
 							},
@@ -342,7 +270,7 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 		daemonSet.Spec.Template.Spec.Containers = append(daemonSet.Spec.Template.Spec.Containers,
 			corev1.Container{
 				Name:  "kube-rbac-proxy",
-				Image: "gcr.m.daocloud.io/kubebuilder/kube-rbac-proxy:v0.4.0",
+				Image: "gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0",
 				Args: []string{
 					"--secure-listen-address=0.0.0.0:8443",
 					"--upstream=http://127.0.0.1:8080/",
@@ -460,11 +388,11 @@ func getOwnerOperation(ctx context.Context, c client.Client, obj metav1.ObjectMe
 	return nil, errors.Errorf("missing controller ref for %s/%s", obj.Namespace, obj.Name)
 }
 
-type MatchingSelector struct {
+type matchingSelector struct {
 	selector labels.Selector
 }
 
-func (m MatchingSelector) ApplyToList(opts *client.ListOptions) {
+func (m matchingSelector) ApplyToList(opts *client.ListOptions) {
 	opts.LabelSelector = m.selector
 }
 
@@ -474,7 +402,7 @@ func listNodesBySelector(c client.Client, selector *metav1.LabelSelector) (*core
 		return nil, errors.Wrap(err, "failed to convert TaskGroup.Spec.NodeSelector to a selector")
 	}
 
-	o := MatchingSelector{selector: s}
+	o := matchingSelector{selector: s}
 
 	nodes := &corev1.NodeList{}
 	if err := c.List(
@@ -537,7 +465,7 @@ func taskGroupToTaskRequests(c client.Client, o handler.MapObject) []ctrl.Reques
 		return nil
 	}
 
-	for _, ms := range actual.Items {
+	for _, ms := range actual.Items { // Dave ... list all the tasks here.
 		name := client.ObjectKey{Namespace: ms.Namespace, Name: ms.Name}
 		result = append(result, ctrl.Request{NamespacedName: name})
 	}

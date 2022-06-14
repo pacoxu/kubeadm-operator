@@ -51,6 +51,7 @@ type OperationReconciler struct {
 // +kubebuilder:rbac:groups=operator.kubeadm.x-k8s.io,resources=operations/status,verbs=get;update;patch
 
 // SetupWithManager configures the controller for calling the reconciler
+// Dave... operation owns runtimetaskground owns runtime tasks.
 func (r *OperationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
 		For(&operatorv1.Operation{}).
@@ -131,16 +132,15 @@ func (r *OperationReconciler) reconcileDaemonSet(operation *operatorv1.Operation
 		return nil
 	}
 
-	// daemonset will be created only if the operation is in controlled mode.
 	if !daemonSetShouldBeRunning(operation) {
 		return nil
 	}
 
 	// if operation running
-	log.WithValues("daemonset-name", daemonSetName(operation.Name)).Info("creating DaemonSet")
 	image := r.AgentImage
 	if image == "" {
 		image, err = getImage(r.Client, r.ManagerNamespace, r.ManagerContainerName)
+		log.WithValues("dave-image", image).Info("checking image")
 		if err != nil {
 			return err
 		}
@@ -221,7 +221,7 @@ func (r *OperationReconciler) reconcileLabels(operation *operatorv1.Operation) {
 func (r *OperationReconciler) reconcileTaskGroups(operation *operatorv1.Operation, log logr.Logger) (*taskGroupReconcileList, error) {
 	// gets all the desired TaskGroup objects for the current operation
 	// Nb. this is the domain knowledge encoded into operation implementations
-	desired, err := operations.TaskGroupList(operation, r.Client)
+	desired, err := operations.TaskGroupList(operation)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get desired TaskGroup list")
 	}
@@ -312,7 +312,6 @@ func (r *OperationReconciler) reconcileNormal(operation *operatorv1.Operation, t
 			// create the next TaskGroup in the ordered sequence
 			nextTaskGroup := taskGroups.tobeCreated[0].planned
 			log.WithValues("task-group", nextTaskGroup.Name).Info("creating task")
-
 			err := r.Client.Create(context.Background(), nextTaskGroup)
 			if err != nil {
 				return errors.Wrap(err, "Failed to create TaskGroup")

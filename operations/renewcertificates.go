@@ -22,18 +22,18 @@ import (
 
 func setupRenewCertificates() map[string]string {
 	return map[string]string{
-		"node-role.kubernetes.io/control-plane": "",
+		"node-role.kubernetes.io/master": "",
 	}
 }
 
 func planRenewCertificates(operation *operatorv1.Operation, spec *operatorv1.RenewCertificatesOperationSpec) *operatorv1.RuntimeTaskGroupList {
 	var items []operatorv1.RuntimeTaskGroup
 
-	t1 := createBasicTaskGroup(operation, "01", "renew")
+	t1 := createBasicTaskGroup(operation, "01", "renew-cp")
 	setCPSelector(&t1)
 	t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
 		operatorv1.CommandDescriptor{
-			KubeadmRenewCertificates: &operatorv1.KubeadmRenewCertsCommandSpec{},
+			KubeadmRenewCertificates: &operatorv1.KubeadmRenewCertsCommandSpec{Args: spec.Args, Cmd: spec.Cmd},
 		},
 	)
 	items = append(items, t1)

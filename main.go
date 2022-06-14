@@ -76,7 +76,8 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager")
 
-	// agent flags
+	// agent flags, Dave... this agent is target to run on this node, so it will ignore the task that is not targeting on this node.
+	// Dave... since this is a daemonset, it assuem to run on each of the nodes. what's this meaning?
 	flag.StringVar(&nodeName, "agent-node-name", "", "The node that the agent manager should control")
 	flag.StringVar(&operation, "agent-operation", "", "The operation that the agent manager should control. If empty, the agent will control headless Task only")
 
@@ -132,7 +133,9 @@ func main() {
 			setupLog.Error(err, "unable to create controller without the --agent-node-name value set", "controller", "RuntimeTask")
 			os.Exit(1)
 		}
-		if nodeName == "" {
+		// Dave: what's the operation here may looks like? Operation should be the name of the operation defined in the "operator_v1alpha1_operation.yaml"
+		// example: upgrade, or renewal.
+		if operation == "" {
 			setupLog.Error(err, "unable to create controller without the --agent-operation value set", "controller", "RuntimeTask")
 			os.Exit(1)
 		}

@@ -17,213 +17,72 @@ limitations under the License.
 package operations
 
 import (
-	"context"
-	"fmt"
-	"os"
-
-	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	operatorv1 "k8s.io/kubeadm/operator/api/v1alpha1"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func setupUpgrade() map[string]string {
 	return map[string]string{}
 }
 
-func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec, c client.Client) *operatorv1.RuntimeTaskGroupList {
-	log := ctrl.Log.WithName("operations").WithName("Upgrade").WithValues("task", operation.Name)
-
-	// TODO support upgrade to v1.n-1~v1.n of current kubernetes server version.
-	// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
-
+func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec) *operatorv1.RuntimeTaskGroupList {
 	var items []operatorv1.RuntimeTaskGroup
-	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
-	serverNeedUpgrade := true
 
-	serverVersion, err := getServerVersion()
-	if err != nil {
-		return nil
+	t1 := createBasicTaskGroup(operation, "01", "upgrade-cp-1")
+	setCP1Selector(&t1)
+	kubeadmVersion := spec.KubeadmVersion
+	if len(kubeadmVersion) == 0 {
+		kubeadmVersion = spec.KubernetesVersion
 	}
-	// TODO is it the right way to check if the `kubeadm upgrade apply` is successful?
-	// check ClusterConfiguration.kubernetesVersion in kubeadm-config configmap?
-	if operation.Spec.Upgrade.KubernetesVersion == serverVersion {
-		//skip upgrade if the current kubernetes server version is the same as the target version
-		serverNeedUpgrade = false
-	}
+	t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
+		operatorv1.CommandDescriptor{
+			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{Version: kubeadmVersion},
+		},
+		operatorv1.CommandDescriptor{
+			KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{Version: spec.KubernetesVersion, Cmd: spec.Cmd},
+		},
+		operatorv1.CommandDescriptor{
+			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{},
+		},
+	)
+	items = append(items, t1)
 
-	// nodeNeedUpgrade := true
-	// nodeVersion, err := getNodeVersion(c, getNodeName())
-	// if err != nil {
-	// 	return nil
-	// }
-	// if operation.Spec.Upgrade.KubernetesVersion == nodeVersion {
-	// 	//skip upgrade node if the current kubernetes server version is the same as the target version
-	// 	nodeNeedUpgrade = false
-	// }
+	t2 := createBasicTaskGroup(operation, "02", "upgrade-cp-n")
+	setCPNSelector(&t2)
+	t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,
+		operatorv1.CommandDescriptor{
+			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{},
+		},
+		operatorv1.CommandDescriptor{
+			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{},
+		},
+		operatorv1.CommandDescriptor{
+			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{},
+		},
+	)
+	items = append(items, t2)
 
-	if serverNeedUpgrade {
-		t1 := createUpgradeApplyTaskGroup(operation, "01", "upgrade-apply")
-		setCP1Selector(&t1)
-		// run `upgrade apply`` on the first node of all control plane
-		t1.Spec.NodeFilter = string(operatorv1.RuntimeTaskGroupNodeFilterHead)
-		t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
-			operatorv1.CommandDescriptor{
-				UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
-					DryRun:            dryRun,
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					SkipKubeProxy:     operation.Spec.Upgrade.UpgradeKubeProxyAtLast,
-				},
-			},
-		)
-		items = append(items, t1)
-	}
-
-	// this can be skipped if there is only one control-plane node.
-	// currently it depends on the selector
-	t2 := createBasicTaskGroup(operation, "02", "upgrade-cp")
-	setCPSelector(&t2)
-	cpNodes, err := listNodesBySelector(c, &t2.Spec.NodeSelector)
-	if err != nil {
-		log.Info("failed to list nodes.", "error", err)
-		return nil
-	}
-	if len(cpNodes.Items) > 1 {
-
-		t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,
-			operatorv1.CommandDescriptor{
-				UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
-					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
-				},
-			},
-		)
-		items = append(items, t2)
-	}
-
-	if operation.Spec.Upgrade.UpgradeKubeProxyAtLast {
-		t3 := createBasicTaskGroup(operation, "03", "upgrade-kube-proxy")
-		t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
-			operatorv1.CommandDescriptor{
-				KubeadmUpgradeKubeProxy: &operatorv1.KubeadmUpgradeKubeProxySpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-				},
-			},
-		)
-		items = append(items, t3)
-	}
-
-	// this can be skipped if there are no worker nodes.
-	// currently it depends on the selector
-	t4 := createBasicTaskGroup(operation, "04", "upgrade-w")
-	setWSelector(&t4)
-	workerNodes, err := listNodesBySelector(c, &t4.Spec.NodeSelector)
-	if err != nil {
-		fmt.Printf("failed to list nodes: %v", err)
-		return nil
-	}
-	if len(workerNodes.Items) > 0 {
-		t4.Spec.Template.Spec.Commands = append(t4.Spec.Template.Spec.Commands,
-			operatorv1.CommandDescriptor{
-				KubectlDrain: &operatorv1.KubectlDrainCommandSpec{},
-			},
-			operatorv1.CommandDescriptor{
-				UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
-					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				KubectlUncordon: &operatorv1.KubectlUncordonCommandSpec{},
-			},
-		)
-		items = append(items, t4)
-	}
+	t3 := createBasicTaskGroup(operation, "02", "upgrade-w")
+	setWSelector(&t3)
+	t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
+		operatorv1.CommandDescriptor{
+			KubectlDrain: &operatorv1.KubectlDrainCommandSpec{},
+		},
+		operatorv1.CommandDescriptor{
+			UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{},
+		},
+		operatorv1.CommandDescriptor{
+			KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{},
+		},
+		operatorv1.CommandDescriptor{
+			UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{},
+		},
+		operatorv1.CommandDescriptor{
+			KubectlUncordon: &operatorv1.KubectlUncordonCommandSpec{},
+		},
+	)
+	items = append(items, t3)
 
 	return &operatorv1.RuntimeTaskGroupList{
 		Items: items,
 	}
-}
-
-// check the current kubernetes server version
-func getServerVersion() (string, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return "", err
-	}
-	clusterclient, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return "", fmt.Errorf("failed to create a cluster client: %w", err)
-	}
-	clusterversion, err := clusterclient.Discovery().ServerVersion()
-	return clusterversion.String(), nil
-}
-
-func getNodeVersion(c client.Client, nodeName string) (string, error) {
-	node := &corev1.Node{}
-	err := c.Get(context.TODO(), types.NamespacedName{Name: nodeName}, node)
-	if err != nil {
-		return "", err
-	}
-	return node.Status.NodeInfo.KubeletVersion, nil
-}
-
-func listNodesBySelector(c client.Client, selector *metav1.LabelSelector) (*corev1.NodeList, error) {
-	s, err := metav1.LabelSelectorAsSelector(selector)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert TaskGroup.Spec.NodeSelector to a selector")
-	}
-
-	nodes := &corev1.NodeList{}
-	if err := c.List(
-		context.Background(), nodes,
-		client.MatchingLabelsSelector{Selector: s},
-	); err != nil {
-		return nil, err
-	}
-
-	return nodes, nil
-}
-
-func getNodeName() string {
-	return os.Getenv("MY_NODE_NAME")
 }

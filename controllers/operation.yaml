@@ -1,0 +1,26 @@
+apiVersion: v1
+items:
+- apiVersion: operator.kubeadm.x-k8s.io/v1alpha1
+  kind: Operation
+  metadata:
+    creationTimestamp: "2022-05-09T08:11:17Z"
+    generation: 1
+    labels:
+      operator.kubeadm.x-k8s.io/operation: upgrade
+      operator.kubeadm.x-k8s.io/uid: 9a12425f-cf6f-11ec-adbf-9a9faa93445b
+    name: upgrade
+    resourceVersion: "11289651"
+    uid: 8fa2df45-b28c-4680-9ccb-65a532ae4871
+  spec:
+    executionMode: DryRun
+    upgrade:
+      kubernetesVersion: v1.16.0
+  status:
+    groups: 3
+    phase: Running
+    runningGroups: 1
+    startTime: "2022-05-09T08:11:18Z"
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

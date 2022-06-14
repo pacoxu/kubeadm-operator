@@ -1,8 +1,8 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= daocloud.io/daocloud/kubeadm-operator:v0.0.5-dev
+IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd"
+#CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -32,15 +32,18 @@ install: manifests
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl apply -f -
+	kustomize build config/default | kubectl create -f -
 
-undeploy: manifests
+debug: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
-	kustomize build config/default | kubectl delete -f -
+	kustomize build config/debug | kubectl create -f -
+
+baremetal:
+	go run manager --mode=manager --manager-pod=baremetal --manager-namespace=operator-system --agent-image=jungler/controller:latest --agent-metrics-rbac=false
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
@@ -58,17 +61,19 @@ generate: controller-gen
 docker-build: test
 	docker build . -t ${IMG}
 
+docker-build-debug: test
+	docker build -f Dockerfile.debug . -t ${IMG}
+
 # Push the docker image
 docker-push:
 	docker push ${IMG}
-
-release: docker-build docker-push
 
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
+	#go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.1
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)

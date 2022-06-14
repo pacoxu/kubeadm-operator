@@ -71,7 +71,7 @@ func (r *RuntimeTaskReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *RuntimeTaskReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, rerr error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("task", req.NamespacedName)
-
+	log.Info("get into the task reconciler...")
 	// Fetch the Task instance
 	task := &operatorv1.RuntimeTask{}
 	if err := r.Client.Get(ctx, req.NamespacedName, task); err != nil {
@@ -98,6 +98,7 @@ func (r *RuntimeTaskReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, rerr
 	}
 
 	// Fetch the parent Operation instance
+	// @TODO: Dave... How the taskgroup and the operation bind together?
 	operation, err := getOwnerOperation(ctx, r.Client, taskgroup.ObjectMeta)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -113,7 +114,7 @@ func (r *RuntimeTaskReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, rerr
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	// Always attempt to Patch the Task object and status after each reconciliation.
+	// Always attempt to Patch the Task object and status after each reconciliation.  Dave... why? if the reconcile is done roll back to original status?
 	defer func() {
 		if err := patchHelper.Patch(ctx, task); err != nil {
 			log.Error(err, "failed to patch Task")
@@ -237,10 +238,12 @@ func (r *RuntimeTaskReconciler) reconcileNormal(executionMode operatorv1.Operati
 	}
 
 	// Proceed with the current command execution
+	log.WithValues("Dave ... get into the command", task.Status.CurrentCommand).Info("running command")
 	if executionMode == operatorv1.OperationExecutionModeDryRun {
 		// if dry running wait for an arbitrary delay so the user will get a better perception of the Task execution order
+		log.Info("Dave ... dry run... just return here")
+		log.WithValues("Dave ... dry run... just return here", task.Status.CurrentCommand).Info("running command")
 		time.Sleep(3 * time.Second)
-		// TODO should we collect log for dry-run?
 	} else {
 		// else we should execute the CurrentCommand
 		log.WithValues("command", task.Status.CurrentCommand).Info("running command")

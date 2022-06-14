@@ -137,6 +137,20 @@ func (a *taskGroupReconcileList) deriveViews() {
 			// Pending
 			a.pending = append(a.pending, v)
 		case v.planned == nil:
+			// Failed
+			if v.current.Status.ErrorReason != nil || v.current.Status.ErrorMessage != nil {
+				a.failed = append(a.failed, v)
+				continue
+			}
+			// Mark as Completed
+			if v.current.Status.CompletionTime != nil {
+				a.completed = append(a.completed, v)
+				continue
+			}
+			// Keep running
+			if v.current.Status.StartTime != nil {
+				a.running = append(a.running, v)
+			}
 			a.invalid = append(a.invalid, v)
 		}
 	}

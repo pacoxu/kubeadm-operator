@@ -93,6 +93,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 		)
+		log.Info("add upgrade-apply task group", "task", t1.Name)
 		items = append(items, t1)
 	}
 
@@ -126,6 +127,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 		)
+		log.Info("add upgrade-cp task group", "task", t2.Name)
 		items = append(items, t2)
 	}
 
@@ -138,6 +140,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 		)
+		log.Info("add upgrade-kube-proxy task group", "task", t3.Name)
 		items = append(items, t3)
 	}
 
@@ -176,6 +179,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				KubectlUncordon: &operatorv1.KubectlUncordonCommandSpec{},
 			},
 		)
+		log.Info("add upgrade-w task group", "task", t4.Name)
 		items = append(items, t4)
 	}
 

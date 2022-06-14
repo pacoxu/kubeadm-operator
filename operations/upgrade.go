@@ -80,16 +80,17 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 			operatorv1.CommandDescriptor{
-				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
 				KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
 					DryRun:            dryRun,
 					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
 					SkipKubeProxy:     operation.Spec.Upgrade.UpgradeKubeProxyAtLast,
+				},
+			},
+			// as it depends on kubelet-reloader, we need to run it after upgrade-kubeadm apply
+			operatorv1.CommandDescriptor{
+				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
+					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					Local:             operation.Spec.Upgrade.Local,
 				},
 			},
 		)
@@ -116,14 +117,15 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 				},
 			},
 			operatorv1.CommandDescriptor{
+				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
+					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
+				},
+			},
+			// as it depends on kubelet-reloader, we need to run it after upgrade-kubeadm
+			operatorv1.CommandDescriptor{
 				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
 					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
 					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				KubeadmUpgradeNode: &operatorv1.KubeadmUpgradeNodeCommandSpec{
-					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
 				},
 			},
 		)

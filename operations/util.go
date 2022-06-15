@@ -143,6 +143,14 @@ func setWSelector(t *operatorv1.RuntimeTaskGroup) {
 	}
 }
 
+func getAllSelector() *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			"kubernetes.io/os": "linux",
+		},
+	}
+}
+
 func fixupCustomTaskGroup(operation *operatorv1.Operation, taskgroup operatorv1.RuntimeTaskGroup, taskdeploymentOrder string) operatorv1.RuntimeTaskGroup {
 	gv := operatorv1.GroupVersion
 

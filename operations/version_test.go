@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestGetCrossVersion(t *testing.T) {
+func TestGetCrossVersions(t *testing.T) {
 	var tests = []struct {
 		current, target string
 		expected        []string
@@ -57,9 +57,9 @@ func TestGetCrossVersion(t *testing.T) {
 	}
 	for _, rt := range tests {
 		t.Run(fmt.Sprintf("%s-%s", rt.current, rt.target), func(t *testing.T) {
-			actual := getCrossVersion(rt.current, rt.target)
+			actual := getCrossVersions(rt.current, rt.target)
 			if !reflect.DeepEqual(actual, rt.expected) {
-				t.Errorf("getCrossVersion(%s, %s) == %v, want %v", rt.current, rt.target, actual, rt.expected)
+				t.Errorf("getCrossVersions(%s, %s) == %v, want %v", rt.current, rt.target, actual, rt.expected)
 			}
 		})
 	}

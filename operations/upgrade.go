@@ -66,6 +66,9 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		isClientCrossVersion = isClientCrossVersion || cross
 		isClientCanSkip = isClientCanSkip && skip
 		clientServerMatch = clientServerMatch && n.Status.NodeInfo.KubeletVersion == serverVersion
+		if n.Status.NodeInfo.KubeletVersion != serverVersion {
+			log.Info("node is not match server version", "node", n.Name, "serverVersion", serverVersion, "kubeletVersion", n.Status.NodeInfo.KubeletVersion)
+		}
 	}
 	if !isClientSupported {
 		log.Info("Upgrade is not supported", "clientVersion", spec.KubernetesVersion)
@@ -81,18 +84,25 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 	} else if isClientCrossVersion || isServerCrossVersion {
 		// support upgrade to v1.n-1~v1.n of current kubernetes server version.
 		// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
-		log.Info("Upgrade is not supported", "clientVersion", spec.KubernetesVersion, "serverVersion", serverVersion)
+		log.Info("Upgrade is not supported, need cross version for client or server", "targetVersion", spec.KubernetesVersion, "serverVersion", serverVersion)
 		if !clientServerMatch {
 			// upgrade nodes to the target version
+			log.Info("[cross-upgrade] add items to make server client match", "serverVersion", serverVersion)
 			items = append(items, planNextUpgrade(operation, serverVersion, c, true)...)
 		}
-		crossVersions := getCrossVersion(serverVersion, spec.KubernetesVersion)
+		crossVersions := getCrossVersions(serverVersion, spec.KubernetesVersion)
 		for _, v := range crossVersions {
+			log.Info("[cross-upgrade] add items to upgrade to a middle version", "version", v)
 			items = append(items, planNextUpgrade(operation, v, c, false)...)
 		}
+		log.Info("[cross-upgrade] add items to upgrade to the target version", "version", spec.KubernetesVersion)
+		items = append(items, planNextUpgrade(operation, operation.Spec.Upgrade.KubernetesVersion, c, false)...)
+
 	} else {
-		items = planNextUpgrade(operation, operation.Spec.Upgrade.KubernetesVersion, c, isServerCanSkip)
+		log.Info("add items to upgrade to the target version", "version", spec.KubernetesVersion)
+		items = append(items, planNextUpgrade(operation, operation.Spec.Upgrade.KubernetesVersion, c, isServerCanSkip)...)
 	}
+
 	return &operatorv1.RuntimeTaskGroupList{
 		Items: items,
 	}
@@ -107,7 +117,7 @@ func planNextUpgrade(operation *operatorv1.Operation, version string, c client.C
 	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
 
 	if !isServerCanSkip {
-		t1 := createUpgradeApplyTaskGroup(operation, "01", fmt.Sprintf("upgrade-apply-%s", version))
+		t1 := createUpgradeApplyTaskGroup(operation, fmt.Sprintf("%s-01", version), "upgrade-apply")
 		setCP1Selector(&t1)
 		// run `upgrade apply`` on the first node of all control plane
 		t1.Spec.NodeFilter = string(operatorv1.RuntimeTaskGroupNodeFilterHead)
@@ -139,7 +149,7 @@ func planNextUpgrade(operation *operatorv1.Operation, version string, c client.C
 
 	// this can be skipped if there is only one control-plane node.
 	// currently it depends on the selector
-	t2 := createBasicTaskGroup(operation, "02", fmt.Sprintf("upgrade-cp-%s", version))
+	t2 := createBasicTaskGroup(operation, fmt.Sprintf("%s-02", version), "upgrade-cp")
 	setCPSelector(&t2)
 	cpNodes, err := listNodesBySelector(c, &t2.Spec.NodeSelector)
 	if err != nil {
@@ -173,7 +183,7 @@ func planNextUpgrade(operation *operatorv1.Operation, version string, c client.C
 	}
 
 	if operation.Spec.Upgrade.UpgradeKubeProxyAtLast {
-		t3 := createBasicTaskGroup(operation, "03", fmt.Sprintf("upgrade-kube-proxy-%s", version))
+		t3 := createBasicTaskGroup(operation, fmt.Sprintf("%s-03", version), "upgrade-kube-proxy")
 		t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
 				KubeadmUpgradeKubeProxy: &operatorv1.KubeadmUpgradeKubeProxySpec{
@@ -187,7 +197,7 @@ func planNextUpgrade(operation *operatorv1.Operation, version string, c client.C
 
 	// this can be skipped if there are no worker nodes.
 	// currently it depends on the selector
-	t4 := createBasicTaskGroup(operation, "04", fmt.Sprintf("upgrade-worker-%s", version))
+	t4 := createBasicTaskGroup(operation, fmt.Sprintf("%s-04", version), "upgrade-worker")
 	setWSelector(&t4)
 	workerNodes, err := listNodesBySelector(c, &t4.Spec.NodeSelector)
 	if err != nil {

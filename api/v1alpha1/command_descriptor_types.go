@@ -102,7 +102,6 @@ type KubeadmUpgradeKubeProxySpec struct {
 	KubernetesVersion string `json:"kubernetesVersion"`
 }
 
-// TODO download the specified version bin and replace it in the node
 // KubeadmUpgradeNodeCommandSpec provides...
 type KubeadmUpgradeNodeCommandSpec struct {
 	// for dry run mode
@@ -132,7 +131,6 @@ type KubectlUncordonCommandSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// TODO download the specified version bin and replace it in the node
 // UpgradeKubeletAndKubeactlCommandSpec provides...
 type UpgradeKubeletAndKubeactlCommandSpec struct {
 	// KubernetesVersion specifies the target kubernetes version

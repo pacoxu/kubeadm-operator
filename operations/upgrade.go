@@ -38,58 +38,108 @@ func setupUpgrade() map[string]string {
 
 func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec, c client.Client) *operatorv1.RuntimeTaskGroupList {
 	log := ctrl.Log.WithName("operations").WithName("Upgrade").WithValues("task", operation.Name)
-
-	// TODO support upgrade to v1.n-1~v1.n of current kubernetes server version.
-	// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
-
 	var items []operatorv1.RuntimeTaskGroup
-	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
-	serverNeedUpgrade := true
 
 	serverVersion, err := getServerVersion()
 	if err != nil {
+		log.Error(err, "get server version failed")
 		return nil
 	}
-	// TODO is it the right way to check if the `kubeadm upgrade apply` is successful?
-	// check ClusterConfiguration.kubernetesVersion in kubeadm-config configmap?
-	if operation.Spec.Upgrade.KubernetesVersion == serverVersion {
-		//skip upgrade if the current kubernetes server version is the same as the target version
-		serverNeedUpgrade = false
+	isServerSupported, isServerCrossVersion, isServerCanSkip := upgradeCheck(serverVersion, spec.KubernetesVersion)
+	if !isServerSupported {
+		log.Info("Upgrade is not supported", "serverVersion", serverVersion, "kubernetesVersion", spec.KubernetesVersion)
+		// TODO current not supported operation will succeed immeditely.
+		return nil
+	}
+	log.Info("Upgrade is supported", "serverVersion", serverVersion, "kubernetesVersion", spec.KubernetesVersion)
+	nodes, err := listNodesBySelector(c, getAllSelector())
+	if err != nil {
+		log.Error(err, "list node failed")
+		return nil
+	}
+	var isClientSupported, isClientCrossVersion, isClientCanSkip bool = true, false, true
+	var clientServerMatch bool = true
+	log.Info("nodes list", "nodes", len(nodes.Items))
+	for _, n := range nodes.Items {
+		supported, cross, skip := upgradeCheck(n.Status.NodeInfo.KubeletVersion, spec.KubernetesVersion)
+		isClientSupported = isClientSupported && supported
+		isClientCrossVersion = isClientCrossVersion || cross
+		isClientCanSkip = isClientCanSkip && skip
+		clientServerMatch = clientServerMatch && n.Status.NodeInfo.KubeletVersion == serverVersion
+		if n.Status.NodeInfo.KubeletVersion != serverVersion {
+			log.Info("node is not match server version", "node", n.Name, "serverVersion", serverVersion, "kubeletVersion", n.Status.NodeInfo.KubeletVersion)
+		}
+	}
+	if !isClientSupported {
+		log.Info("Upgrade is not supported", "clientVersion", spec.KubernetesVersion)
+		return nil
+	}
+	log.Info("show all client version check results", "isClientSupported", isClientSupported, "isClientCrossVersion", isClientCrossVersion, "isClientCanSkip", isClientCanSkip, "clientServerMatch", clientServerMatch)
+	log.Info("show all server version check results", "isServerSupported", isServerSupported, "isServerCrossVersion", isServerCrossVersion, "isServerCanSkip", isServerCanSkip)
+	if isClientCanSkip && isServerCanSkip {
+		// skip upgrade directly
+		return &operatorv1.RuntimeTaskGroupList{
+			Items: items,
+		}
+	} else if isClientCrossVersion || isServerCrossVersion {
+		// support upgrade to v1.n-1~v1.n of current kubernetes server version.
+		// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
+		log.Info("Upgrade is not supported, need cross version for client or server", "targetVersion", spec.KubernetesVersion, "serverVersion", serverVersion)
+		if !clientServerMatch {
+			// upgrade nodes to the target version
+			log.Info("[cross-upgrade] add items to make server client match", "serverVersion", serverVersion)
+			items = append(items, planNextUpgrade(operation, serverVersion, c, true)...)
+		}
+		crossVersions := getCrossVersions(serverVersion, spec.KubernetesVersion)
+		for _, v := range crossVersions {
+			log.Info("[cross-upgrade] add items to upgrade to a middle version", "version", v)
+			items = append(items, planNextUpgrade(operation, v, c, false)...)
+		}
+		log.Info("[cross-upgrade] add items to upgrade to the target version", "version", spec.KubernetesVersion)
+		items = append(items, planNextUpgrade(operation, operation.Spec.Upgrade.KubernetesVersion, c, false)...)
+
+	} else {
+		log.Info("add items to upgrade to the target version", "version", spec.KubernetesVersion)
+		items = append(items, planNextUpgrade(operation, operation.Spec.Upgrade.KubernetesVersion, c, isServerCanSkip)...)
 	}
 
-	// nodeNeedUpgrade := true
-	// nodeVersion, err := getNodeVersion(c, getNodeName())
-	// if err != nil {
-	// 	return nil
-	// }
-	// if operation.Spec.Upgrade.KubernetesVersion == nodeVersion {
-	// 	//skip upgrade node if the current kubernetes server version is the same as the target version
-	// 	nodeNeedUpgrade = false
-	// }
+	return &operatorv1.RuntimeTaskGroupList{
+		Items: items,
+	}
+}
 
-	if serverNeedUpgrade {
-		t1 := createUpgradeApplyTaskGroup(operation, "01", "upgrade-apply")
+// the version may not be operation.Spec.Upgrade.KubernetesVersion for cross upgrade
+func planNextUpgrade(operation *operatorv1.Operation, version string, c client.Client, isServerCanSkip bool) []operatorv1.RuntimeTaskGroup {
+	log := ctrl.Log.WithName("operations").WithName("Upgrade").WithValues("task", operation.Name)
+	log.Info("add task for upgrading", "version", version, "isServerCanSkip", isServerCanSkip)
+
+	var items []operatorv1.RuntimeTaskGroup
+	dryRun := operation.Spec.GetTypedOperationExecutionMode() == operatorv1.OperationExecutionModeDryRun
+
+	if !isServerCanSkip {
+		t1 := createUpgradeApplyTaskGroup(operation, fmt.Sprintf("%s-01", version), "upgrade-apply")
 		setCP1Selector(&t1)
 		// run `upgrade apply`` on the first node of all control plane
 		t1.Spec.NodeFilter = string(operatorv1.RuntimeTaskGroupNodeFilterHead)
 		t1.Spec.Template.Spec.Commands = append(t1.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
 				UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					KubernetesVersion: version,
 					Local:             operation.Spec.Upgrade.Local,
 				},
 			},
 			operatorv1.CommandDescriptor{
 				KubeadmUpgradeApply: &operatorv1.KubeadmUpgradeApplyCommandSpec{
 					DryRun:            dryRun,
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					KubernetesVersion: version,
 					SkipKubeProxy:     operation.Spec.Upgrade.UpgradeKubeProxyAtLast,
+				},
+			},
+			// as it depends on kubelet-reloader, we need to run it after upgrade-kubeadm apply
+			operatorv1.CommandDescriptor{
+				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
+					KubernetesVersion: version,
+					Local:             operation.Spec.Upgrade.Local,
 				},
 			},
 		)
@@ -99,25 +149,19 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 
 	// this can be skipped if there is only one control-plane node.
 	// currently it depends on the selector
-	t2 := createBasicTaskGroup(operation, "02", "upgrade-cp")
+	t2 := createBasicTaskGroup(operation, fmt.Sprintf("%s-02", version), "upgrade-cp")
 	setCPSelector(&t2)
 	cpNodes, err := listNodesBySelector(c, &t2.Spec.NodeSelector)
 	if err != nil {
 		log.Info("failed to list nodes.", "error", err)
-		return nil
+		return items
 	}
 	if len(cpNodes.Items) > 1 {
 
 		t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
 				UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
-					Local:             operation.Spec.Upgrade.Local,
-				},
-			},
-			operatorv1.CommandDescriptor{
-				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					KubernetesVersion: version,
 					Local:             operation.Spec.Upgrade.Local,
 				},
 			},
@@ -126,17 +170,24 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 					DryRun: operatorv1.OperationExecutionMode(operation.Spec.ExecutionMode) == operatorv1.OperationExecutionModeDryRun,
 				},
 			},
+			// as it depends on kubelet-reloader, we need to run it after upgrade-kubeadm
+			operatorv1.CommandDescriptor{
+				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
+					KubernetesVersion: version,
+					Local:             operation.Spec.Upgrade.Local,
+				},
+			},
 		)
 		log.Info("add upgrade-cp task group", "task", t2.Name)
 		items = append(items, t2)
 	}
 
 	if operation.Spec.Upgrade.UpgradeKubeProxyAtLast {
-		t3 := createBasicTaskGroup(operation, "03", "upgrade-kube-proxy")
+		t3 := createBasicTaskGroup(operation, fmt.Sprintf("%s-03", version), "upgrade-kube-proxy")
 		t3.Spec.Template.Spec.Commands = append(t3.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
 				KubeadmUpgradeKubeProxy: &operatorv1.KubeadmUpgradeKubeProxySpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					KubernetesVersion: version,
 				},
 			},
 		)
@@ -146,13 +197,14 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 
 	// this can be skipped if there are no worker nodes.
 	// currently it depends on the selector
-	t4 := createBasicTaskGroup(operation, "04", "upgrade-w")
+	t4 := createBasicTaskGroup(operation, fmt.Sprintf("%s-04", version), "upgrade-worker")
 	setWSelector(&t4)
 	workerNodes, err := listNodesBySelector(c, &t4.Spec.NodeSelector)
 	if err != nil {
 		fmt.Printf("failed to list nodes: %v", err)
-		return nil
+		return items
 	}
+	log.Info("workerNodes check", "workerNum", len(workerNodes.Items))
 	if len(workerNodes.Items) > 0 {
 		t4.Spec.Template.Spec.Commands = append(t4.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{
@@ -160,13 +212,13 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 			},
 			operatorv1.CommandDescriptor{
 				UpgradeKubeadm: &operatorv1.UpgradeKubeadmCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					KubernetesVersion: version,
 					Local:             operation.Spec.Upgrade.Local,
 				},
 			},
 			operatorv1.CommandDescriptor{
 				UpgradeKubeletAndKubeactl: &operatorv1.UpgradeKubeletAndKubeactlCommandSpec{
-					KubernetesVersion: operation.Spec.Upgrade.KubernetesVersion,
+					KubernetesVersion: version,
 					Local:             operation.Spec.Upgrade.Local,
 				},
 			},
@@ -182,10 +234,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		log.Info("add upgrade-w task group", "task", t4.Name)
 		items = append(items, t4)
 	}
-
-	return &operatorv1.RuntimeTaskGroupList{
-		Items: items,
-	}
+	return items
 }
 
 // check the current kubernetes server version

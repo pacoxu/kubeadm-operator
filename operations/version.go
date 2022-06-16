@@ -82,7 +82,7 @@ func isSupportedVersion(ver *version.Version) bool {
 
 // before this, we should make sure the version is supported
 func getCrossVersion(current, target string) []string {
-	var versions []string
+	versions := []string{}
 	cur, err := version.ParseSemantic(current)
 	if err != nil {
 		return versions

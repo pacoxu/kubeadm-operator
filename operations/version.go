@@ -96,7 +96,7 @@ func getCrossVersion(current, target string) []string {
 		return versions
 	}
 	tarMinor := tar.Minor()
-	for i := cur.Minor(); i < tarMinor; i++ {
+	for i := cur.Minor() + 1; i < tarMinor; i++ {
 		versions = append(versions, fmt.Sprintf("v1.%d.0", i))
 	}
 	return versions

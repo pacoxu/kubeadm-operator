@@ -156,7 +156,9 @@ func planNextUpgrade(operation *operatorv1.Operation, version string, c client.C
 		log.Info("failed to list nodes.", "error", err)
 		return items
 	}
-	if len(cpNodes.Items) > 1 {
+	// Workaround: if isServerCanSkip, the only server's kubelet may need to upgrade.
+	// TODO to make more accurate task, we may cut tasks into small ones, for instance, upgrade kubelet only.
+	if len(cpNodes.Items) > 1 || isServerCanSkip {
 
 		t2.Spec.Template.Spec.Commands = append(t2.Spec.Template.Spec.Commands,
 			operatorv1.CommandDescriptor{

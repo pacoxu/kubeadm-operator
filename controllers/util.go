@@ -122,6 +122,11 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 							Key:    "node-role.kubernetes.io/control-plane",
 							Effect: corev1.TaintEffectNoSchedule,
 						},
+						// to work for v1.22-
+						{
+							Key:    "node-role.kubernetes.io/master",
+							Effect: corev1.TaintEffectNoSchedule,
+						},
 					},
 					Containers: []corev1.Container{
 						{

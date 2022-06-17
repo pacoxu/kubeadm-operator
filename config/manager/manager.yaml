@@ -39,7 +39,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
-        image: daocloud.io/daocloud/kubeadm-operator:v0.0.5-dev
+        image: daocloud.io/daocloud/kubeadm-operator:v0.1.0
         name: manager
         resources:
           limits:

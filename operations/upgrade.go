@@ -65,7 +65,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		isClientSupported = isClientSupported && supported
 		isClientCrossVersion = isClientCrossVersion || cross
 		isClientCanSkip = isClientCanSkip && skip
-		clientServerMatch = clientServerMatch && n.Status.NodeInfo.KubeletVersion == serverVersion
+		clientServerMatch = clientServerMatch && isClientServerMatch(n.Status.NodeInfo.KubeletVersion, serverVersion)
 		if n.Status.NodeInfo.KubeletVersion != serverVersion {
 			log.Info("node is not match server version", "node", n.Name, "serverVersion", serverVersion, "kubeletVersion", n.Status.NodeInfo.KubeletVersion)
 		}

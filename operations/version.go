@@ -115,3 +115,16 @@ func getPerferedVersion(minor uint) string {
 	}
 	return fmt.Sprintf("v1.%d.0", minor)
 }
+
+// isClientServerMatch checks if the client needs further upgrade to run `kubeadm upgrade node` to sync with master
+// if client version is newer than or equals the target version, it returns false
+// if client version is older, we should  run `kubeadm upgrade node` on that node. In this case, we call it mismatch
+func isClientServerMatch(clientVersion, serverVersion string) bool {
+	client, _ := version.ParseSemantic(clientVersion)
+	server, _ := version.ParseSemantic(serverVersion)
+	if client.Minor() >= server.Minor() {
+		// for upgrade, we can allow some nodes are using a newer kubelet(of course this may be not valid).
+		return true
+	}
+	return false
+}

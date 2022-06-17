@@ -36,26 +36,26 @@ func setupUpgrade() map[string]string {
 	return map[string]string{}
 }
 
-func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec, c client.Client) *operatorv1.RuntimeTaskGroupList {
+func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperationSpec, c client.Client) (*operatorv1.RuntimeTaskGroupList, error) {
 	log := ctrl.Log.WithName("operations").WithName("Upgrade").WithValues("task", operation.Name)
 	var items []operatorv1.RuntimeTaskGroup
 
 	serverVersion, err := getServerVersion()
 	if err != nil {
 		log.Error(err, "get server version failed")
-		return nil
+		return nil, errors.Wrap(err, "Failed to get server version")
 	}
 	isServerSupported, isServerCrossVersion, isServerCanSkip := upgradeCheck(serverVersion, spec.KubernetesVersion)
 	if !isServerSupported {
 		log.Info("Upgrade is not supported", "serverVersion", serverVersion, "kubernetesVersion", spec.KubernetesVersion)
 		// TODO current not supported operation will succeed immeditely.
-		return nil
+		return nil, errors.Wrap(err, "Upgrade is not supported")
 	}
 	log.Info("Upgrade is supported", "serverVersion", serverVersion, "kubernetesVersion", spec.KubernetesVersion)
 	nodes, err := listNodesBySelector(c, getAllSelector())
 	if err != nil {
-		log.Error(err, "list node failed")
-		return nil
+		log.Error(err, "list nodes failed")
+		return nil, errors.Wrap(err, "Failed to list nodes")
 	}
 	var isClientSupported, isClientCrossVersion, isClientCanSkip bool = true, false, true
 	var clientServerMatch bool = true
@@ -72,7 +72,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 	}
 	if !isClientSupported {
 		log.Info("Upgrade is not supported", "clientVersion", spec.KubernetesVersion)
-		return nil
+		return nil, errors.Wrap(err, "Upgrade is not supported for some nodes' kubelet version")
 	}
 	log.Info("show all client version check results", "isClientSupported", isClientSupported, "isClientCrossVersion", isClientCrossVersion, "isClientCanSkip", isClientCanSkip, "clientServerMatch", clientServerMatch)
 	log.Info("show all server version check results", "isServerSupported", isServerSupported, "isServerCrossVersion", isServerCrossVersion, "isServerCanSkip", isServerCanSkip)
@@ -80,7 +80,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 		// skip upgrade directly
 		return &operatorv1.RuntimeTaskGroupList{
 			Items: items,
-		}
+		}, nil
 	} else if isClientCrossVersion || isServerCrossVersion {
 		// support upgrade to v1.n-1~v1.n of current kubernetes server version.
 		// If the current kubernetes server version is v1.n-2 which is below the target version, we need to generate a further upgrade plan
@@ -105,7 +105,7 @@ func planUpgrade(operation *operatorv1.Operation, spec *operatorv1.UpgradeOperat
 
 	return &operatorv1.RuntimeTaskGroupList{
 		Items: items,
-	}
+	}, nil
 }
 
 // the version may not be operation.Spec.Upgrade.KubernetesVersion for cross upgrade

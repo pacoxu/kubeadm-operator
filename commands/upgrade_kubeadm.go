@@ -71,7 +71,7 @@ func runUpgradeKubeadm(spec *operatorv1.UpgradeKubeadmCommandSpec, log logr.Logg
 		return err
 	}
 
-	cmd := newCmd("/usr/bin/cp", "-f", "/usr/bin/kubeadm-"+spec.KubernetesVersion, "/usr/bin/kubeadm")
+	cmd := newCmd("cp", "-f", "/usr/bin/kubeadm-"+spec.KubernetesVersion, "/usr/bin/kubeadm")
 	start, err := cmd.RunAndCapture()
 	if err != nil {
 		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))

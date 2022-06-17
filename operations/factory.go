@@ -47,7 +47,7 @@ func TaskGroupList(operation *operatorv1.Operation, c client.Client) (*operatorv
 	}
 
 	if operation.Spec.Upgrade != nil {
-		return planUpgrade(operation, operation.Spec.Upgrade, c), nil
+		return planUpgrade(operation, operation.Spec.Upgrade, c)
 	}
 
 	if operation.Spec.CustomOperation != nil {

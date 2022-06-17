@@ -24,9 +24,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 # distroless cannot run `kubeadm upgrade apply` smoothly
 # FROM gcr.m.daocloud.io/distroless/static:nonroot
-FROM docker.m.daocloud.io/ubuntu
-RUN apt-get update -q -y && apt-get install -q -y curl && apt clean all
 
+# ubuntu based operation image is about 158MiB 72.8MiB.
+# FROM docker.m.daocloud.io/ubuntu
+
+FROM k8s-gcr.m.daocloud.io/debian-base:v1.0.0
+RUN apt-get update -q -y && apt-get install -q -y curl && apt clean all
 WORKDIR /
 COPY --from=builder /workspace/manager .
 # USER nonroot:nonroot

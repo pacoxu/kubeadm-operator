@@ -188,11 +188,6 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 									Name:      "crictl",
 									MountPath: "/usr/local/bin/crictl",
 								},
-								// cp is used by kubeadm upgrade apply to run command like `cp`
-								{
-									Name:      "cp",
-									MountPath: "/usr/bin/cp",
-								},
 								{
 									Name:      "etc-kubernetes",
 									MountPath: "/etc/kubernetes",
@@ -284,15 +279,6 @@ func createDaemonSet(c client.Client, operation *operatorv1.Operation, namespace
 								HostPath: &corev1.HostPathVolumeSource{
 									Path: "/usr/local/bin/crictl",
 									Type: hostPathTypePtr(corev1.HostPathFileOrCreate),
-								},
-							},
-						},
-						{
-							Name: "cp",
-							VolumeSource: corev1.VolumeSource{
-								HostPath: &corev1.HostPathVolumeSource{
-									Path: "/usr/bin/cp",
-									Type: hostPathTypePtr(corev1.HostPathFile),
 								},
 							},
 						},

@@ -46,7 +46,7 @@ func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlComma
 		// upgrade can skip kubectl upgrade
 		log.Info("kubectl upgrade is not significant, so skip")
 	}
-	cmd := newCmd("/usr/bin/cp", "-f", "/usr/bin/kubectl-"+spec.KubernetesVersion, "/usr/bin/kubectl")
+	cmd := newCmd("cp", "-f", "/usr/bin/kubectl-"+spec.KubernetesVersion, "/usr/bin/kubectl")
 	start, err := cmd.RunAndCapture()
 	if err != nil {
 		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))
@@ -65,7 +65,7 @@ func runUpgradeKubectlAndKubelet(spec *operatorv1.UpgradeKubeletAndKubeactlComma
 	}
 
 	// see https://github.com/pacoxu/kubelet-reloader/ to add a daemon or service on nodes to replace kubelet and restart kubelet.
-	cmd = newCmd("/usr/bin/cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet-new")
+	cmd = newCmd("cp", "-f", "/usr/bin/kubelet-"+spec.KubernetesVersion, "/usr/bin/kubelet-new")
 	start, err = cmd.RunAndCapture()
 	if err != nil {
 		return errors.WithStack(errors.WithMessage(err, strings.Join(start, "\n")))

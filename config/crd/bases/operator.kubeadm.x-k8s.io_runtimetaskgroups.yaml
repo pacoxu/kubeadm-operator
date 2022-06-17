@@ -220,9 +220,7 @@ spec:
                               - kubernetesVersion
                               type: object
                             kubeadmUpgradeNode:
-                              description: TODO download the specified version bin
-                                and replace it in the node KubeadmUpgradeNodeCommandSpec
-                                provides...
+                              description: KubeadmUpgradeNodeCommandSpec provides...
                               properties:
                                 dryRun:
                                   description: for dry run mode
@@ -269,9 +267,7 @@ spec:
                                   type: boolean
                               type: object
                             upgradeKubeletAndKubeactl:
-                              description: TODO download the specified version bin
-                                and replace it in the node UpgradeKubeletAndKubeactlCommandSpec
-                                provides...
+                              description: UpgradeKubeletAndKubeactlCommandSpec provides...
                               properties:
                                 kubernetesVersion:
                                   description: KubernetesVersion specifies the target

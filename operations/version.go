@@ -22,6 +22,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
+// by default, we use v1.x.0 directly, but if there is a prefered version, we use it
+var preferedKubeadmVersion = map[uint]string{
+	// TODO change the version to lastest version after https://github.com/kubernetes/kubeadm/issues/2426(a bug in v1.24) is fixed
+	24: "v1.24.2",
+}
+
 func upgradeCheck(current, target string) (isSupported, isCrossVersion, canSkip bool) {
 	currentVer, err := version.ParseSemantic(current)
 	if err != nil {
@@ -97,7 +103,15 @@ func getCrossVersions(current, target string) []string {
 	}
 	tarMinor := tar.Minor()
 	for i := cur.Minor() + 1; i < tarMinor; i++ {
-		versions = append(versions, fmt.Sprintf("v1.%d.0", i))
+		version := getPerferedVersion(i)
+		versions = append(versions, version)
 	}
 	return versions
+}
+
+func getPerferedVersion(minor uint) string {
+	if preferedKubeadmVersion[minor] != "" {
+		return preferedKubeadmVersion[minor]
+	}
+	return fmt.Sprintf("v1.%d.0", minor)
 }

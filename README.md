@@ -15,6 +15,30 @@ cd kubeadm-operator
 make install
 make deploy
 ```
+**Notice: for pod cannot restart kubelet, [kubelet-reloader](https://github.com/pacoxu/kubelet-reloader)should run on all cluster nodes as a daemon or process.
+**
+### kubelet reloader installation
+```
+wget https://github.com/pacoxu/kubeadm-operator/releases/download/v0.1.0/kubelet-reloader-v0.2.0
+chmod +x kubelet-reloader-v0.2.0
+./kubelet-reloader-v0.2.0
+```
+https://github.com/pacoxu/kubeadm-operator/issues/85 is for this problem.
+
+## Dev Tips
+
+To build your own kubeadm-operator image:
+```
+make docker-build
+```
+
+You can change the `IMG` in `Makefile` to push the image to your repository and install/deploy to the development cluster.
+```
+make release
+make install
+make deploy
+```
+
 
 ## Demo 
 

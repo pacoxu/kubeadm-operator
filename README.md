@@ -28,43 +28,47 @@ operator-controller-manager-64c448f5b-p682x   2/2     Running   0          77m  
 If you create a dry-run upgrade operation, there will be a runtimetaqskgroup with 
 
 ```
-[root@daocloud ~]# cat up.yaml
+[root@paco ~]# cat up.yaml
 apiVersion: operator.kubeadm.x-k8s.io/v1alpha1
 kind: Operation
 metadata:
-  name: upgrade-1
+  name: upgrade-v1.24.1
 spec:
-  executionMode: DryRun
+  executionMode: Auto
   upgrade:
-    kubernetesVersion: v1.23.4
-    
-[root@daocloud ~]# kubectl get runtimetaskgroup -w
-NAME                        PHASE     NODES   SUCCEEDED   FAILED
-upgrade-1-01-upgrade-cp-1   Running   1
-upgrade-1-01-upgrade-cp-1   Succeeded   1       1
-upgrade-1-02-upgrade-cp-n
-upgrade-1-02-upgrade-cp-n   Running
-upgrade-1-02-upgrade-cp-n   Succeeded
-upgrade-1-02-upgrade-w
-upgrade-1-02-upgrade-w      Running
-upgrade-1-02-upgrade-w      Succeeded
-upgrade-1-02-upgrade-w      Succeeded    
+    kubernetesVersion: v1.24.1
+    local: false
 ```
 
 After the operation is done, the operation and task group are all `Succeeded`.
 
 ```
-[root@daocloud ~]# kubectl get operations
-NAME        PHASE       GROUPS   SUCCEEDED   FAILED
-upgrade-1   Succeeded   3        3
-[root@daocloud ~]# kubectl get runtimetaskgroup
-NAME                        PHASE       NODES   SUCCEEDED   FAILED
-upgrade-1-01-upgrade-cp-1   Succeeded   1       1
-upgrade-1-02-upgrade-cp-n   Succeeded
-upgrade-1-02-upgrade-w      Succeeded
-[root@daocloud ~]# kubectl get runtimetask
-NAME                                 PHASE       STARTTIME   COMMAND   COMPLETIONTIME
-upgrade-1-01-upgrade-cp-1-daocloud   Succeeded   75m         3/3       75m
+NAME                                                  PHASE       GROUPS   SUCCEEDED   FAILED
+operation.operator.kubeadm.x-k8s.io/upgrade-v1.24.1   Succeeded   4	   4
 
+NAME                                                                                       PHASE       STARTTIME   COMMAND   COMPLETIONTIME
+runtimetask.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.23.0-01-upgrade-apply-paco        Succeeded   20m         3/3       12m
+runtimetask.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.23.0-04-upgrade-worker-daocloud   Succeeded   12m  	   5/5       10m
+runtimetask.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.24.1-01-upgrade-apply-paco        Succeeded   10m         3/3       3m25s
+runtimetask.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.24.1-04-upgrade-worker-daocloud   Succeeded   3m21s       5/5       55s
 
+NAME                                                                                   PHASE	   NODES   SUCCEEDED   FAILED
+runtimetaskgroup.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.23.0-01-upgrade-apply    Succeeded   1	   1
+runtimetaskgroup.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.23.0-04-upgrade-worker   Succeeded   1	   1
+runtimetaskgroup.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.24.1-01-upgrade-apply    Succeeded   1       1
+runtimetaskgroup.operator.kubeadm.x-k8s.io/upgrade-v1.24.1-v1.24.1-04-upgrade-worker   Succeeded   1       1
+
+[root@paco ~]# kubelet --version
+Kubernetes v1.24.1
+[root@paco ~]# kubeadm version
+kubeadm version: &version.Info{Major:"1", Minor:"24", GitVersion:"v1.24.1", GitCommit:"3ddd0f45aa91e2f30c70734b175631bec5b5825a", GitTreeState:"clean", BuildDate:"2022-05-24T12:24:38Z", GoVersion:"go1.18.2", Compiler:"gc", Platform:"linux/amd64"}
+[root@paco ~]# kubectl version
+WARNING: This version information is deprecated and will be replaced with the output from kubectl version --short.  Use --output=yaml|json to get the full version.
+Client Version: version.Info{Major:"1", Minor:"24", GitVersion:"v1.24.1", GitCommit:"3ddd0f45aa91e2f30c70734b175631bec5b5825a", GitTreeState:"clean", BuildDate:"2022-05-24T12:26:19Z", GoVersion:"go1.18.2", Compiler:"gc", Platform:"linux/amd64"}
+Kustomize Version: v4.5.4
+Server Version: version.Info{Major:"1", Minor:"24", GitVersion:"v1.24.1", GitCommit:"3ddd0f45aa91e2f30c70734b175631bec5b5825a", GitTreeState:"clean", BuildDate:"2022-05-24T12:18:48Z", GoVersion:"go1.18.2", Compiler:"gc", Platform:"linux/amd64"}
+[root@paco ~]# kubectl get node
+NAME       STATUS   ROLES           AGE     VERSION
+daocloud   Ready    <none>          6h36m   v1.24.1
+paco       Ready    control-plane   6h37m   v1.24.1
 ```

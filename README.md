@@ -33,7 +33,7 @@ https://github.com/pacoxu/kubeadm-operator/issues/85 is for this problem.
 - Empty means no testing yet.
 
 | initial version\ target version | v1.20 | v1.21 | v1.22 | v1.23 | v1.24 |
-|---------------------------------|-------|-------|-------|-------|
+|---------------------------------|-------|-------|-------|-------|-------|
 | v1.20                           |       |       |       |       |       |
 | v1.21                           |       |       |       |       |       |
 | v1.22                           |       |       | ✅✅    | ✅✅    | ✅✅    |

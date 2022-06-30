@@ -25,6 +25,22 @@ chmod +x kubelet-reloader-v0.2.0
 ```
 https://github.com/pacoxu/kubeadm-operator/issues/85 is for this problem.
 
+## Version Support Matrix
+
+- ✅✅  means supported and suggested
+- ✅❌ means supported but not suggested
+- ❌❌ means not supported and not suggested
+- Empty means no testing yet.
+
+| initial version\ target version | v1.20 | v1.21 | v1.22 | v1.23 | v1.24 |
+|---------------------------------|-------|-------|-------|-------|
+| v1.20                           |       |       |       |       |       |
+| v1.21                           |       |       |       |       |       |
+| v1.22                           |       |       | ✅✅    | ✅✅    | ✅✅    |
+| v1.23                           |       | ❌❌      | ✅❌    | ✅✅    | ✅✅    |
+| v1.24                           |       | ❌❌      | ❌❌    | ✅❌    | ✅✅    |
+
+
 ## Dev Tips
 
 To build your own kubeadm-operator image:

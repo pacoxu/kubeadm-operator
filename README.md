@@ -5,6 +5,8 @@ Do not use in production.
 
 See [KEP](https://git.k8s.io/enhancements/keps/sig-cluster-lifecycle/kubeadm/2505-Kubeadm-operator) for more details.
 
+See email threads in https://mail.google.com/mail/u/0/#inbox/FMfcgzGqPpgGlrWbcSVJpPnNjmbXXcQf.
+
 ## Quick Start
 
 Configure kubeconfig for your cluster.
